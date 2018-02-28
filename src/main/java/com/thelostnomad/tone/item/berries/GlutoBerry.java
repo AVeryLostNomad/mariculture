@@ -1,14 +1,10 @@
 package com.thelostnomad.tone.item.berries;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.PotionEffect;
 import net.minecraft.world.World;
 
 public class GlutoBerry extends ItemFood {
@@ -24,6 +20,11 @@ public class GlutoBerry extends ItemFood {
 
     public ItemStack onItemUseFinish(ItemStack stack, World worldIn, EntityLivingBase entityLiving)
     {
+        if(entityLiving instanceof EntityPlayer){
+            EntityPlayer ep = (EntityPlayer) entityLiving;
+            ep.getFoodStats().setFoodSaturationLevel(10F);
+            ep.getFoodStats().setFoodLevel(20);
+        }
         return super.onItemUseFinish(stack, worldIn, entityLiving);
     }
 

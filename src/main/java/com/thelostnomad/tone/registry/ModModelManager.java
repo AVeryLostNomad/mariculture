@@ -1,21 +1,17 @@
 package com.thelostnomad.tone.registry;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
-import com.thelostnomad.tone.block.BasicStorageHollow;
 import com.thelostnomad.tone.util.IVariant;
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemMeshDefinition;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.init.Items;
-import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
-import net.minecraft.util.EnumFacing;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.fluids.IFluidBlock;
@@ -44,6 +40,7 @@ public class ModModelManager {
         registerItemModel(ModItems.glutoBerryItem, "thingsofnaturalenergies:gluto_berry_item");
         registerItemModel(ModItems.funcoBerryItem, "thingsofnaturalenergies:funco_berry_item");
         registerItemModel(new ItemBlock(ModBlocks.sentientSapling), "thingsofnaturalenergies:sentient_sapling");
+        registerItemModel(ModItems.shardOfSentience, "thingsofnaturalenergies:shard_of_sentience");
     }
 
     private void registerFluidModels() {

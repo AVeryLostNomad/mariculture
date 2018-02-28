@@ -33,10 +33,6 @@ compileJava {
     sourceCompatibility = targetCompatibility = '1.8'
 }
 
-repositories {
-    maven { url 'http://tehnut.info/maven/' }
-}
-
 dependencies {
     // you may put jars on which you depend on in ./libs
     // or you may define them like so..
@@ -54,7 +50,6 @@ dependencies {
     // except that these dependencies get remapped to your current MCP mappings
     //deobfCompile 'com.mod-buildcraft:buildcraft:6.0.8:dev'
     //deobfProvided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-    deobfCompile "info.amerifrance.guideapi:Guide-API:1.12-2.1.4-57"
     // for more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html

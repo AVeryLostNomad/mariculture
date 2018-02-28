@@ -13,10 +13,10 @@ import com.thelostnomad.tone.registry.ModBlocks;
 import com.thelostnomad.tone.registry.ModGuiHandler;
 import com.thelostnomad.tone.registry.ModItems;
 import com.thelostnomad.tone.util.ChatUtil;
-import com.thelostnomad.tone.util.RecipeUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Biomes;
 import net.minecraft.item.Item;
@@ -26,7 +26,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentUtils;
 import net.minecraft.world.World;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.BlockEvent;
@@ -39,9 +38,7 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Mod.EventBusSubscriber
 public class CommonProxy {
@@ -110,6 +107,7 @@ public class CommonProxy {
         event.getRegistry().register(ModItems.hastoBerryItem);
         event.getRegistry().register(ModItems.glutoBerryItem);
         event.getRegistry().register(ModItems.funcoBerryItem);
+        event.getRegistry().register(ModItems.shardOfSentience);
     }
 
     @SubscribeEvent
@@ -142,7 +140,20 @@ public class CommonProxy {
         toSend.add(new TextComponentString("  Something suspicious falls out of the tree.  ").setStyle(new Style().setItalic(true)));
         ChatUtil.sendChat(player, toSend.toArray(new ITextComponent[toSend.size()]));
 
-        // TODO actually spawn the item (after we make it, of course)
+        EntityItem item = new EntityItem(w, place.getX() + 0.5, place.getY() + 0.5, place.getZ() + 0.5, new ItemStack(ModItems.shardOfSentience, 1));
+
+        // Apply some random motion to the item
+        float multiplier = 0.1f;
+        float motionX = w.rand.nextFloat() - 0.5f;
+        float motionY = w.rand.nextFloat() - 0.5f;
+        float motionZ = w.rand.nextFloat() - 0.5f;
+
+        item.motionX = motionX * multiplier;
+        item.motionY = motionY * multiplier;
+        item.motionZ = motionZ * multiplier;
+
+        // Spawn the item in the world
+        w.spawnEntity(item);
     }
 
 }
