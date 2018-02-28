@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
 import java.awt.*;
 
 @GuideBook
-public class ToneGuidebook implements IGuideBook {
+public class ToneGuidebookT1 implements IGuideBook {
 
     public static Book book;
 
@@ -34,7 +34,7 @@ public class ToneGuidebook implements IGuideBook {
         book = new Book();
         book.setAuthor("TheLostNomad");
         book.setColor(Color.GREEN);
-        book.setDisplayName("Natural Energies Handbook");
+        book.setDisplayName("Natural Energies Handbook, First Edition");
         book.setTitle("Things of Natural Energies v" + ThingsOfNaturalEnergies.VERSION);
         book.setWelcomeMessage("Index");
         book.setCreativeTab(ThingsOfNaturalEnergies.creativeTab);
@@ -67,6 +67,6 @@ public class ToneGuidebook implements IGuideBook {
     @Nullable
     @Override
     public IRecipe getRecipe(@Nonnull ItemStack bookStack) {
-        return new ShapelessOreRecipe(null, bookStack, Items.BOOK, ModBlocks.sentientLeaves).setRegistryName(book.getRegistryName());
+        return new ShapelessOreRecipe(null, bookStack, Items.BOOK, Blocks.LEAVES, Blocks.SAPLING).setRegistryName(book.getRegistryName());
     }
 }
