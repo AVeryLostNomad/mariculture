@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.block.statemap.StateMapperBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.EnumDyeColor;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.util.EnumFacing;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
@@ -42,6 +43,7 @@ public class ModModelManager {
         registerItemModel(ModItems.hastoBerryItem, "thingsofnaturalenergies:hasto_berry_item");
         registerItemModel(ModItems.glutoBerryItem, "thingsofnaturalenergies:gluto_berry_item");
         registerItemModel(ModItems.funcoBerryItem, "thingsofnaturalenergies:funco_berry_item");
+        registerItemModel(new ItemBlock(ModBlocks.sentientSapling), "thingsofnaturalenergies:sentient_sapling");
     }
 
     private void registerFluidModels() {
@@ -114,6 +116,9 @@ public class ModModelManager {
         );
         registerBlockItemModel(
                 ModBlocks.funcoBerry.getDefaultState()
+        );
+        registerBlockItemModel(
+                ModBlocks.sentientSapling.getDefaultState()
         );
     }
 

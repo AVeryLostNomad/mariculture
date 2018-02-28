@@ -17,7 +17,7 @@ public class GlutoBerry extends ItemFood {
     {
         super(1, 10.0f, false);
         this.setMaxStackSize(16);
-        this.setCreativeTab(CreativeTabs.MISC);   // the item will appear on the Miscellaneous tab in creative
+        this.setCreativeTab(ThingsOfNaturalEnergies.creativeTab);   // the item will appear on the Miscellaneous tab in creative
         setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".berry_gluto_item");     // Used for localization (en_US.lang)
         setRegistryName("berry_gluto_item");        // The unique name (within your mod) that identifies this block
     }

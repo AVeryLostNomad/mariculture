@@ -22,7 +22,7 @@ public class HastoBerry extends ItemFood {
     {
         super(1, 0.1f, false);
         this.setMaxStackSize(16);
-        this.setCreativeTab(CreativeTabs.MISC);   // the item will appear on the Miscellaneous tab in creative
+        this.setCreativeTab(ThingsOfNaturalEnergies.creativeTab);   // the item will appear on the Miscellaneous tab in creative
         setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".berry_hasto_item");     // Used for localization (en_US.lang)
         setRegistryName("berry_hasto_item");        // The unique name (within your mod) that identifies this block
     }

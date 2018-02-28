@@ -90,6 +90,7 @@ public class CommonProxy {
         event.getRegistry().register(ModItems.tokenPullAll);
         event.getRegistry().register(ModItems.hastoBerryItem);
         event.getRegistry().register(ModItems.glutoBerryItem);
+        event.getRegistry().register(ModItems.funcoBerryItem);
     }
 
 }

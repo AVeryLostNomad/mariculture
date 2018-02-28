@@ -1,0 +1,32 @@
+#Sentient tree blocks
+tile.thingsofnaturalenergies.sentient_core.name=Sentient Tree Core
+tile.thingsofnaturalenergies.roots.name=Life Infused Roots
+tile.thingsofnaturalenergies.puller.name=Puller
+tile.thingsofnaturalenergies.pusher.name=Pusher
+tile.thingsofnaturalenergies.sentient_leaves.name=Sentient Leaves
+tile.thingsofnaturalenergies.sentient_log.name=Sentient Log
+tile.thingsofnaturalenergies.sentient_sapling.name=Sentient Sapling
+
+tile.thingsofnaturalenergies.storagehollow_basic.name=Basic Storage Hollow
+
+#Berry blocks
+tile.thingsofnaturalenergies.berry_hasto.name=Hastoberry Fruit
+tile.thingsofnaturalenergies.berry_funco.name=Funcoberry Fruit
+tile.thingsofnaturalenergies.berry_gluto.name=Glutoberry Fruit
+
+#Berry items
+item.thingsofnaturalenergies.berry_hasto_item.name=Hastoberries
+item.thingsofnaturalenergies.berry_funco_item.name=Funcoberries
+item.thingsofnaturalenergies.berry_gluto_item.name=Glutoberries
+
+# Other mod factors
+itemGroup.thingsofnaturalenergies=Things of Natural Energies
+
+# Guidebook
+category.trees=Sentient Trees
+category.trees.logs=The Basics
+category.trees.logs.page0=I quickly found out that the various fauna peppering these lands were not the only things "alive." It turns out that even the trees have a sort of life to them, though repressed at first.
+category.trees.logs.page1=I am convinced that - given enough time and study, I can bring this life to bear in a tangible form.\n\n - Nomad
+category.trees.samples=Samples of Sentience
+category.trees.samples.page0=I think by cutting down enough trees, I might eventually find evidence of this life within them.
+category.trees.samples.page1=Or maybe it will find me..?
