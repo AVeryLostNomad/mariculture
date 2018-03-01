@@ -256,7 +256,7 @@ public class WorldGenSentientTree extends WorldGenAbstractTree
         Random rand = new Random();
         for(BlockPos pos : heightMap.values()){
             // These are the lowest leaves in the tree.
-            if(rand.nextInt(100) < 1){
+            if(rand.nextInt(100) < 10){
                 // Spawn a random berry type based on biome? That sounds nifty. Force the players to get around a bit.
                 Biome b = world.getBiome(pos);
                 BlockBerry canGoHere = ModBlocks.getBerryForBiome(b);

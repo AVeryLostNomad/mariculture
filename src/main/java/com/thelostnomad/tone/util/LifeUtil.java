@@ -14,6 +14,12 @@ public class LifeUtil {
         List<PotionEffect> potionsOn = new ArrayList<>(entityLiving.getActivePotionEffects());
 
         double lifeToReturn = (4000 * maxHp) + (1200 * currentHp) + (600 * potionsOn.size());
+
+        if(entityLiving.hasCustomName()){
+            //Wither or dragon or other boss, I think
+            lifeToReturn *= 2; // That's right, two TIMES the amount.
+        }
+
         return lifeToReturn;
     }
 

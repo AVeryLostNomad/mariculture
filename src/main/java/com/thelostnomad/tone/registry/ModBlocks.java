@@ -2,10 +2,7 @@ package com.thelostnomad.tone.registry;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.*;
-import com.thelostnomad.tone.block.berries.BlockBerry;
-import com.thelostnomad.tone.block.berries.FuncoBerry;
-import com.thelostnomad.tone.block.berries.GlutoBerry;
-import com.thelostnomad.tone.block.berries.HastoBerry;
+import com.thelostnomad.tone.block.berries.*;
 import jdk.nashorn.internal.ir.Block;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -43,16 +40,14 @@ public class ModBlocks {
     public static GlutoBerry glutoBerry;
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_funco")
     public static FuncoBerry funcoBerry;
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_rezzo")
+    public static RezzoBerry rezzoBerry;
 
     public static BlockBerry getBerryForBiome(Biome b){
-        BlockBerry[] toCheck = new BlockBerry[]{hastoBerry, glutoBerry, funcoBerry};
+        BlockBerry[] toCheck = new BlockBerry[]{hastoBerry, glutoBerry, funcoBerry, rezzoBerry};
 
         for(BlockBerry berry : toCheck){
-            if(berry instanceof GlutoBerry){
-                ThingsOfNaturalEnergies.logger.error("Checking gluto");
-            }
             for(Biome biome : berry.getThrivesIn()){
-                ThingsOfNaturalEnergies.logger.error("Biome: " + biome.getBiomeName() + " and " + b.getBiomeName());
                 if (biome.getBiomeName().equals(b.getBiomeName())){
                     return berry;
                 }

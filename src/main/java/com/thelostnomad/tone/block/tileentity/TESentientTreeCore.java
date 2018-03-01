@@ -5,10 +5,7 @@ import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.BlockPuller;
 import com.thelostnomad.tone.block.BlockPusher;
 import com.thelostnomad.tone.block.RootBlock;
-import com.thelostnomad.tone.block.berries.BlockBerry;
-import com.thelostnomad.tone.block.berries.FuncoBerry;
-import com.thelostnomad.tone.block.berries.GlutoBerry;
-import com.thelostnomad.tone.block.berries.HastoBerry;
+import com.thelostnomad.tone.block.berries.*;
 import com.thelostnomad.tone.item.tokens.ItemToken;
 import com.thelostnomad.tone.registry.ModBlocks;
 import com.thelostnomad.tone.registry.ModItems;
@@ -17,7 +14,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.BlockHopper;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -41,7 +40,9 @@ import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 import java.awt.font.TextAttribute;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +65,13 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     private Integer glutoCount = 0;
     private Integer funcoCount = 0;
-    private Integer craftoCount = 30; // TODO implement later.
+    private Integer craftoCount = 0; // TODO implement later.
+    private Integer rezzoCount = 0;
+
+    // For rezzoberry
+    private EntityLiving targetSpawn = null;
+    private Integer lifeContributedSoFar = 0;
+    private Integer lifeNeeded = 0;
 
     private Double life = 0D;
     private Double maxLife = 0D; // The maximum amount of life that can be stored in this thing.
@@ -134,6 +141,20 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("maxlife", new NBTTagDouble(maxLife));
         parentNBTTagCompound.setTag("glutocount", new NBTTagInt(glutoCount));
         parentNBTTagCompound.setTag("funcocount", new NBTTagInt(funcoCount));
+        parentNBTTagCompound.setTag("rezzocount", new NBTTagInt(rezzoCount));
+        /**
+         * private EntityLiving targetSpawn = null;
+         private Integer lifeContributedSoFar = 0;
+         private Integer lifeNeeded = 0;
+         */
+        NBTTagCompound entityTargetTag = new NBTTagCompound();
+        if(targetSpawn != null){
+            targetSpawn.writeEntityToNBT(entityTargetTag);
+            parentNBTTagCompound.setTag("target_spawn", entityTargetTag);
+            parentNBTTagCompound.setTag("target_spawn_name", new NBTTagString(targetSpawn.getClass().getName()));
+        }
+        parentNBTTagCompound.setTag("lifeContributedSoFar", new NBTTagInt(lifeContributedSoFar));
+        parentNBTTagCompound.setTag("lifeNeeded", new NBTTagInt(lifeNeeded));
 
         NBTTagList shs = new NBTTagList();
         for(BlockPos b : this.storageHollows){
@@ -202,6 +223,33 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if(glutoCount == null) glutoCount = 0;
         funcoCount = parentNBTTagCompound.getInteger("funcocount");
         if(funcoCount == null) funcoCount = 0;
+        rezzoCount = parentNBTTagCompound.getInteger("rezzocount");
+        if(rezzoCount == null) rezzoCount = 0;
+
+        /*
+        NBTTagCompound entityTargetTag = new NBTTagCompound();
+        targetSpawn.writeEntityToNBT(entityTargetTag);
+        parentNBTTagCompound.setTag("target_spawn", entityTargetTag);
+        parentNBTTagCompound.setTag("lifeContributedSoFar", new NBTTagInt(lifeContributedSoFar));
+        parentNBTTagCompound.setTag("lifeNeeded", new NBTTagInt(lifeNeeded));
+         */
+        lifeNeeded = parentNBTTagCompound.getInteger("lifeNeeded");
+        if(lifeNeeded == null) lifeNeeded = 0;
+        lifeContributedSoFar = parentNBTTagCompound.getInteger("lifeContributedSoFar");
+        if(lifeContributedSoFar == null) lifeContributedSoFar = 0;
+        if(lifeNeeded == lifeContributedSoFar){
+            lifeContributedSoFar = (int) (lifeContributedSoFar / 2D);
+        }
+        try {
+            NBTTagCompound entityTargetTag = parentNBTTagCompound.getCompoundTag("target_spawn");
+            Class<? extends EntityLiving> entityClass = null;
+            entityClass = (Class<? extends EntityLiving>) Class.forName(parentNBTTagCompound.getString("target_spawn_name"));
+            EntityLiving el = (EntityLiving) entityClass.getConstructor(World.class).newInstance(world);
+            el.readEntityFromNBT(entityTargetTag);
+            targetSpawn = el;
+        } catch (Exception e){
+            targetSpawn = null;
+        }
 
         NBTTagList hollows = parentNBTTagCompound.getTagList("storageHollows",10);
         for(int i = 0; i < hollows.tagCount(); i++){
@@ -235,6 +283,23 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
 
     }
+
+    public EntityLiving getSpawnTarget(){
+        return this.targetSpawn;
+    }
+
+    public void setSpawnTarget(EntityLiving newTarget){
+        this.targetSpawn = newTarget;
+    }
+
+    public int getContributedToSpawn(){
+        return this.lifeContributedSoFar;
+    }
+
+    public int getNeededToSpawn(){
+        return this.lifeNeeded;
+    }
+
     public void addBerry(BlockPos position) {
         if(world.getBlockState(position).getBlock() instanceof HastoBerry){
             this.tickRate --;
@@ -247,6 +312,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
         if(world.getBlockState(position).getBlock() instanceof FuncoBerry){
             this.funcoCount ++;
+        }
+        if(world.getBlockState(position).getBlock() instanceof RezzoBerry){
+            this.rezzoCount ++;
         }
         this.berries.add(position);
     }
@@ -263,7 +331,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
         if(name.equals("funcoberry")){
             this.funcoCount--;
-            ThingsOfNaturalEnergies.logger.error("New funco: " + this.funcoCount);
+        }
+        if(name.equals("rezzoberry")){
+            this.rezzoCount--;
         }
         this.berries.remove(position);
     }
@@ -412,25 +482,100 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
 
         pullLifeIntoSystem();
+
+        if(rezzoCount > 0){
+            // We can do some work towards spawning a creature.
+            if(targetSpawn == null){
+                selectSpawnTarget();
+                return;
+            }
+
+            int lifeToAdd = (rezzoCount * 50);
+            if(lifeToAdd > (lifeNeeded - lifeContributedSoFar)){
+                lifeToAdd = (lifeNeeded - lifeContributedSoFar);
+            }
+            setLife(getLife() - lifeToAdd);
+            lifeContributedSoFar+=lifeToAdd;
+            if(lifeContributedSoFar.equals(lifeNeeded)){
+                // We have done enough. Let's spawn this gosh darn mob!
+                // Pick a random root block
+                BlockPos root = this.roots.get(world.rand.nextInt(this.roots.size()));
+                BlockPos spawnPos = root.up(4);
+                targetSpawn.setPosition(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+                targetSpawn.setHealth(targetSpawn.getMaxHealth());
+                try {
+                    if(targetSpawn == null || world == null){
+                        return;
+                    }
+                    world.spawnEntity(targetSpawn);
+                    ThingsOfNaturalEnergies.logger.error("Should have just spawned a guy");
+                    targetSpawn = null;
+                }catch(Exception e){
+                    return;
+                }
+            }
+        }
+    }
+
+    private void selectSpawnTarget() {
+        List<EntityLiving> el = MobUtil.mobsForItemLoot(world, allItemsInStorage());
+        if(el.size() == 0) return;
+        Map<Integer, EntityLiving> oddsBreakdown = new HashMap<>();
+        int total = 0;
+        for(EntityLiving e : el){
+            if(LifeUtil.getLifeForEntity(e) > getMaxLife()){
+                // We have no way of making this entity.
+                // Skip it
+                continue;
+            }
+            total+=LifeUtil.getLifeForEntity(e);
+            oddsBreakdown.put(Integer.valueOf(total), e);
+        }
+        boolean found = false;
+        EntityLiving last = null;
+        while(oddsBreakdown.size() > 1 && !found){
+            // Eliminate mobs to select
+            int rand = world.rand.nextInt(total);
+            for(Map.Entry<Integer, EntityLiving> entry : oddsBreakdown.entrySet()){
+                if(rand < entry.getKey()){
+                    last = entry.getValue();
+                    continue;
+                }else{
+                    // We've reached the end of the line. rand is too big. Get the last one that it was less than
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if(last == null){
+            last = el.get(0);
+        }
+
+        targetSpawn = last;
+        lifeContributedSoFar = 0;
+        lifeNeeded = (int) LifeUtil.getLifeForEntity(targetSpawn) * 2;
     }
 
     private void pullLifeIntoSystem(){
         // Scan through all still connected root blocks and see if we can pull something here.
         for(BlockPos bp : roots){
-            List<EntityLiving> nearbyEntities = world.getEntities(EntityLiving.class, new Predicate<EntityLiving>() {
-                @Override
-                public boolean apply(@Nullable EntityLiving input) {
-                    return (Math.sqrt(input.getPosition().distanceSq(bp.getX(), bp.getY(), bp.getZ())) < 5D) && ((input.getHealth() / input.getMaxHealth()) > 0.5F);
+            // Rezzoberry disables the life pulling from roots.
+            if(rezzoCount == 0) {
+                List<EntityLiving> nearbyEntities = world.getEntities(EntityLiving.class, new Predicate<EntityLiving>() {
+                    @Override
+                    public boolean apply(@Nullable EntityLiving input) {
+                        return (Math.sqrt(input.getPosition().distanceSq(bp.getX(), bp.getY(), bp.getZ())) < 5D) && ((input.getHealth() / input.getMaxHealth()) > 0.5F);
+                    }
+                });
+                for (EntityLiving near : nearbyEntities) {
+                    double amt = LifeUtil.getLifeForEntity(near);
+                    this.setLife(getLife() + amt);
+                    if (this.life > this.maxLife) {
+                        this.life = this.maxLife;
+                        return;
+                    }
+                    LifeUtil.deductLifeFromEntity(near);
                 }
-            });
-            for(EntityLiving near : nearbyEntities){
-                double amt = LifeUtil.getLifeForEntity(near);
-                this.setLife(getLife() + amt);
-                if(this.life > this.maxLife){
-                    this.life = this.maxLife;
-                    return;
-                }
-                LifeUtil.deductLifeFromEntity(near);
             }
 
             if(glutoCount > 0){

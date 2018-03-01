@@ -97,7 +97,6 @@ public abstract class BlockBerry extends Block implements ITree, IBerry {
         TileEntity tileentity = worldIn.getTileEntity(core);
         if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
-            ThingsOfNaturalEnergies.logger.error("Removed the berry");
             tileEntityData.removeBerry(pos, breakString);
         }
         worldIn.setBlockToAir(pos);

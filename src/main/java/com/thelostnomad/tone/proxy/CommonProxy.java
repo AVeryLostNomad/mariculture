@@ -5,6 +5,7 @@ import com.thelostnomad.tone.block.*;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
+import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.block.tileentity.TEPuller;
 import com.thelostnomad.tone.block.tileentity.TEPusher;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
@@ -87,6 +88,7 @@ public class CommonProxy {
         event.getRegistry().register(new HastoBerry());
         event.getRegistry().register(new GlutoBerry());
         event.getRegistry().register(new FuncoBerry());
+        event.getRegistry().register(new RezzoBerry());
     }
 
     @SubscribeEvent
@@ -102,11 +104,13 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.hastoBerry).setRegistryName(ModBlocks.hastoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.glutoBerry).setRegistryName(ModBlocks.glutoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.funcoBerry).setRegistryName(ModBlocks.funcoBerry.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.rezzoBerry).setRegistryName(ModBlocks.rezzoBerry.getRegistryName()));
 
         event.getRegistry().register(ModItems.tokenPullAll);
         event.getRegistry().register(ModItems.hastoBerryItem);
         event.getRegistry().register(ModItems.glutoBerryItem);
         event.getRegistry().register(ModItems.funcoBerryItem);
+        event.getRegistry().register(ModItems.rezzoBerryItem);
         event.getRegistry().register(ModItems.shardOfSentience);
     }
 
