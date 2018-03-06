@@ -4,6 +4,7 @@ import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.util.ChatUtil;
 import com.thelostnomad.tone.util.ITree;
+import com.thelostnomad.tone.util.MobUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
@@ -74,7 +75,15 @@ public class SentientTreeCore extends Block implements ITree {
                 TESentientTreeCore core = (TESentientTreeCore) worldIn.getTileEntity(pos);
                 List<ITextComponent> toSend = new ArrayList<ITextComponent>();
                 toSend.add(new TextComponentString("Life: " + String.valueOf(core.getLife()) + "  Max Life: " + String.valueOf(core.getMaxLife())));
+                if(core.getSpawnTarget() != null){
+                    toSend.add(new TextComponentString("In the process of spawning: " + core.getSpawnTarget().
+                            getName() + ". [" + core.getContributedToSpawn() + " / " + core.getNeededToSpawn() + "]"));
+                }
                 ChatUtil.sendNoSpam(playerIn, toSend.toArray(new ITextComponent[toSend.size()]));
+
+                if(playerIn.isSneaking()){
+                    core.setSpawnTarget(null);
+                }
             }
         }
         return true;

@@ -39,6 +39,7 @@ public class ModModelManager {
         registerItemModel(ModItems.hastoBerryItem, "thingsofnaturalenergies:hasto_berry_item");
         registerItemModel(ModItems.glutoBerryItem, "thingsofnaturalenergies:gluto_berry_item");
         registerItemModel(ModItems.funcoBerryItem, "thingsofnaturalenergies:funco_berry_item");
+        registerItemModel(ModItems.rezzoBerryItem, "thingsofnaturalenergies:rezzo_berry_item");
         registerItemModel(new ItemBlock(ModBlocks.sentientSapling), "thingsofnaturalenergies:sentient_sapling");
         registerItemModel(ModItems.shardOfSentience, "thingsofnaturalenergies:shard_of_sentience");
     }
@@ -116,6 +117,9 @@ public class ModModelManager {
         );
         registerBlockItemModel(
                 ModBlocks.funcoBerry.getDefaultState()
+        );
+        registerBlockItemModel(
+                ModBlocks.rezzoBerry.getDefaultState()
         );
         registerBlockItemModel(
                 ModBlocks.sentientSapling.getDefaultState()
