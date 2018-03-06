@@ -1,20 +1,24 @@
 package com.thelostnomad.tone.block.tileentity;
 
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTTagString;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidTank;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
 
-import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
-public class TEFluidHollow extends TileEntity implements IFluidTank{
+public class TEFluidHollow extends TileEntity {
 
     public static final String NAME = "tone_fluidhollow_tileentity";
     private BlockPos coreLocation = null;
 
-    public FluidTank internalTank;
+    // For every given fluid in this hollow, how many millibuckets do we have
+    private Map<Fluid, Long> millibucketsByFluid = new HashMap<Fluid, Long>();
 
     private HollowType storageLevel;
 
@@ -22,45 +26,130 @@ public class TEFluidHollow extends TileEntity implements IFluidTank{
 
     public void setStorageLevel(HollowType type){
         this.storageLevel = type;
-        init();
     }
 
-    public void init(){
-        internalTank = new FluidTank(this.storageLevel.size);
+    public long getFilledMillibuckets(){
+        long total = 0L;
+        for(Map.Entry<Fluid, Long> e : millibucketsByFluid.entrySet()){
+            total+=e.getValue();
+        }
+        return total;
     }
 
-    @Nullable
+    public long getCapacity(){
+        return (long) this.storageLevel.size;
+    }
+
+    public long getCapacityMillibuckets(){
+        return this.storageLevel.size * 1000L;
+    }
+
+    public void addFluid(Fluid f, Long millibuckets){
+        if(millibucketsByFluid.containsKey(f)){
+            millibucketsByFluid.put(f, millibucketsByFluid.get(f) + millibuckets);
+        }else{
+            millibucketsByFluid.put(f, millibuckets);
+        }
+    }
+
+    public void setCoreLocation(BlockPos core){
+        this.coreLocation = core;
+    }
+
+    public BlockPos getCoreLocation(){
+        return this.coreLocation;
+    }
+
+    public Set<Fluid> getFluids(){
+        return millibucketsByFluid.keySet();
+    }
+
+    public boolean containsFluid(Fluid f){
+        return millibucketsByFluid.containsKey(f);
+    }
+
+    public long amountFluid(Fluid f){
+        return millibucketsByFluid.get(f);
+    }
+
+    public void removeFluid(Fluid f, Long millibuckets){
+        millibucketsByFluid.put(f, millibucketsByFluid.get(f) - millibuckets);
+        if(amountFluid(f) == 0){
+            millibucketsByFluid.remove(f);
+        }
+    }
+
+    // This is where you save any data that you don't want to lose when the tile entity unloads
+    // In this case, it saves the itemstacks stored in the container
     @Override
-    public FluidStack getFluid() {
-        return internalTank.getFluid();
+    public NBTTagCompound writeToNBT(NBTTagCompound parentNBTTagCompound) {
+        super.writeToNBT(parentNBTTagCompound); // The super call is required to save and load the tileEntity's location
+
+        NBTTagString storageType = new NBTTagString(storageLevel.name);
+
+        NBTTagList dataForAllSlots = new NBTTagList();
+        for (Map.Entry<Fluid, Long> entry : millibucketsByFluid.entrySet()) {
+            NBTTagCompound thisFluidStack = new NBTTagCompound();
+            thisFluidStack.setString("fluid_name", entry.getKey().getName());
+            thisFluidStack.setLong("fluid_amt", entry.getValue());
+            dataForAllSlots.appendTag(thisFluidStack);
+        }
+//        // the array of hashmaps is then inserted into the parent hashmap for the container
+        parentNBTTagCompound.setTag("Level", storageType);
+        parentNBTTagCompound.setTag("Fluids", dataForAllSlots);
+
+        if (coreLocation == null) {
+            return parentNBTTagCompound;
+        }
+
+        NBTTagCompound blockPosNBT = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
+        blockPosNBT.setInteger("x", coreLocation.getX());
+        blockPosNBT.setInteger("y", coreLocation.getY());
+        blockPosNBT.setInteger("z", coreLocation.getZ());
+        parentNBTTagCompound.setTag("coreLocation", blockPosNBT);
+
+        // to use an analogy with Java, this code generates an array of hashmaps
+        // The itemStack in each slot is converted to an NBTTagCompound, which is effectively a hashmap of key->value pairs such
+        //   as slot=1, id=2353, count=1, etc
+        // Each of these NBTTagCompound are then inserted into NBTTagList, which is similar to an array.
+        // return the NBT Tag Compound
+        return parentNBTTagCompound;
     }
 
+    // This is where you load the data that you saved in writeToNBT
     @Override
-    public int getFluidAmount() {
-        return internalTank.getFluidAmount();
+    public void readFromNBT(NBTTagCompound parentNBTTagCompound) {
+        super.readFromNBT(parentNBTTagCompound); // The super call is required to save and load the tiles location
+
+        String level = parentNBTTagCompound.getString("Level");
+        for (HollowType ht : HollowType.values()) {
+            if (ht.equals(level)) {
+                this.storageLevel = ht;
+                break;
+            }
+        }
+
+        NBTTagCompound coreLoc = parentNBTTagCompound.getCompoundTag("coreLocation");
+        if (coreLoc != null) {
+            coreLocation = new BlockPos(coreLoc.getInteger("x"),
+                    coreLoc.getInteger("y"), coreLoc.getInteger("z"));
+        }
+
+        final byte NBT_TYPE_COMPOUND = 10;       // See NBTBase.createNewByType() for a listing
+        NBTTagList dataForAllSlots = parentNBTTagCompound.getTagList("Fluids", NBT_TYPE_COMPOUND);
+
+        for (int i = 0; i < dataForAllSlots.tagCount(); ++i) {
+            NBTTagCompound dataForOneSlot = dataForAllSlots.getCompoundTagAt(i);
+            long amount = dataForOneSlot.getLong("fluid_amt");
+            String fluidName = dataForOneSlot.getString("fluid_name");
+
+            Fluid f = FluidRegistry.getFluid(fluidName);
+            millibucketsByFluid.put(f, amount);
+        }
     }
 
-    @Override
-    public int getCapacity() {
-        return storageLevel.size;
-    }
-
-    @Override
-    public FluidTankInfo getInfo() {
-        return this.internalTank.getInfo();
-    }
-
-    @Override
-    public int fill(FluidStack resource, boolean doFill) {
-        return this.internalTank.fill(resource, doFill);
-    }
-
-    @Nullable
-    @Override
-    public FluidStack drain(int maxDrain, boolean doDrain) {
-        return this.internalTank.drain(maxDrain, doDrain);
-    }
-
+    // Type of hollow in terms of bucket capacity and name
+    // Bucket capacity here represented in integers.
     public enum HollowType {
         INDIVIDUAL(10000, "Specialized"), // Pending balance.
         BASIC(8000, "Basic"),

@@ -5,10 +5,9 @@ import com.thelostnomad.tone.block.*;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
-import com.thelostnomad.tone.block.tileentity.TEPuller;
-import com.thelostnomad.tone.block.tileentity.TEPusher;
-import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
-import com.thelostnomad.tone.block.tileentity.TEStorageHollow;
+import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
+import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
+import com.thelostnomad.tone.block.tileentity.*;
 import com.thelostnomad.tone.registry.ModBlocks;
 import com.thelostnomad.tone.registry.ModGuiHandler;
 import com.thelostnomad.tone.registry.ModItems;
@@ -49,6 +48,7 @@ public class CommonProxy {
         // Each of your tile entities needs to be registered with a name that is unique to your mod.
         GameRegistry.registerTileEntity(TESentientTreeCore.class, TESentientTreeCore.NAME);
         GameRegistry.registerTileEntity(TEStorageHollow.class, TEStorageHollow.NAME);
+        GameRegistry.registerTileEntity(TEFluidHollow.class, TEFluidHollow.NAME);
         GameRegistry.registerTileEntity(TEPuller.class, TEPuller.NAME);
         GameRegistry.registerTileEntity(TEPusher.class, TEPusher.NAME);
 
@@ -77,6 +77,7 @@ public class CommonProxy {
         event.getRegistry().register(new RootBlock());
         event.getRegistry().register(new SentientTreeCore());
         event.getRegistry().register(new BasicStorageHollow());
+        event.getRegistry().register(new BasicFluidHollow());
         event.getRegistry().register(new SentientSapling());
         event.getRegistry().register(new SentientLog());
         event.getRegistry().register(new SentientLeaves());
@@ -94,6 +95,7 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.rootsBlock).setRegistryName(ModBlocks.rootsBlock.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientTreeCore).setRegistryName(ModBlocks.sentientTreeCore.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.storageHollowBasic).setRegistryName(ModBlocks.storageHollowBasic.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.fluidHollowBasic).setRegistryName(ModBlocks.fluidHollowBasic.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientLeaves).setRegistryName(ModBlocks.sentientLeaves.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientLog).setRegistryName(ModBlocks.sentientLog.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientSapling).setRegistryName(ModBlocks.sentientSapling.getRegistryName()));

@@ -4,23 +4,18 @@ import com.google.common.base.Predicate;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.BlockPuller;
 import com.thelostnomad.tone.block.BlockPusher;
-import com.thelostnomad.tone.block.RootBlock;
-import com.thelostnomad.tone.block.berries.BlockBerry;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
 import com.thelostnomad.tone.item.tokens.ItemToken;
-import com.thelostnomad.tone.registry.ModBlocks;
 import com.thelostnomad.tone.registry.ModItems;
-import com.thelostnomad.tone.util.*;
+import com.thelostnomad.tone.util.CraftingOperation;
+import com.thelostnomad.tone.util.LifeUtil;
+import com.thelostnomad.tone.util.RecipeUtil;
+import com.thelostnomad.tone.util.TreeUtil;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockContainer;
-import net.minecraft.block.BlockHopper;
-import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
@@ -38,9 +33,13 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.BlockFluidBase;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
-import java.awt.font.TextAttribute;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +50,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public static final String NAME = "tone_sentienttree_tileentity";
 
     List<BlockPos> storageHollows = new ArrayList<BlockPos>();
+    List<BlockPos> fluidHollows = new ArrayList<BlockPos>();
     List<BlockPos> pullers = new ArrayList<>();
     List<BlockPos> pushers = new ArrayList<>();
 
@@ -144,6 +144,17 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             shs.appendTag(thisBlockPos);
         }
         parentNBTTagCompound.setTag("storageHollows", shs);
+
+        NBTTagList fhs = new NBTTagList();
+        for(BlockPos b : this.fluidHollows){
+            NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
+            thisBlockPos.setInteger("x", b.getX());
+            thisBlockPos.setInteger("y", b.getY());
+            thisBlockPos.setInteger("z", b.getZ());
+            fhs.appendTag(thisBlockPos);
+        }
+        parentNBTTagCompound.setTag("fluidHollows", fhs);
+
         NBTTagList pullers = new NBTTagList();
         for(BlockPos b : this.pullers){
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
@@ -209,6 +220,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.storageHollows.add(pos);
         }
+        NBTTagList fluidHollows = parentNBTTagCompound.getTagList("fluidHollows",10);
+        for(int i = 0; i < fluidHollows.tagCount(); i++){
+            NBTTagCompound comp = fluidHollows.getCompoundTagAt(i);
+            BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
+            this.fluidHollows.add(pos);
+        }
         NBTTagList pullers = parentNBTTagCompound.getTagList("pullers",10);
         for(int i = 0; i < pullers.tagCount(); i++){
             NBTTagCompound comp = pullers.getCompoundTagAt(i);
@@ -272,6 +289,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         this.storageHollows.add(position);
     }
 
+    public void addFluidHollow(BlockPos position){
+        this.fluidHollows.add(position);
+    }
+
+    public void removeFluidHollow(BlockPos position) { this.fluidHollows.remove(position);}
+
     public void removeStorageHollow(BlockPos position){
         this.storageHollows.remove(position);
     }
@@ -298,6 +321,16 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         for(BlockPos bp : this.storageHollows){
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if(!teStorageHollow.isFull()){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasFluidRoomLeft() {
+        for(BlockPos bp : this.fluidHollows){
+            TEFluidHollow teStorageHollow = (TEFluidHollow) world.getTileEntity(bp);
+            if(teStorageHollow.getFilledMillibuckets() != teStorageHollow.getCapacityMillibuckets()){
                 return true;
             }
         }
@@ -347,6 +380,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 //		this.markDirty();            // if you update a tileentity variable on the server and this should be communicated to the client,
 // 																		you need to markDirty() to force a resend.  In this case, the client doesn't need to know
 
+        // Item checks
         if(!pullers.isEmpty() && hasRoomLeft()){
             // We can pull things, maybe!
             for(BlockPos pos : pullers){
@@ -407,6 +441,42 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     }
                     boolean success = pushItemsIfPossible(offset, blockface, filter);
                     if(success) this.setLife(getLife() - (200 * (funcoCount + 1)));
+                }
+            }
+        }
+
+        // Let's do fluid stuff too!
+        if(!pullers.isEmpty() && hasFluidRoomLeft()){
+            // We can try to pull fluids, if we are capable of pulling fluids.
+
+            for(BlockPos pos : pullers){
+                if(world.getBlockState(pos).getBlock() instanceof BlockPuller) {
+                    TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
+                    if (tePuller == null) continue;
+
+                    ItemStack[] filter = tePuller.getStacks();
+                    // We're in good shape. Get it's facing
+                    EnumFacing direction = world.getBlockState(pos).getValue(BlockPuller.FACING);
+                    EnumFacing blockFace = direction.getOpposite();
+                    BlockPos offset = pos.offset(direction);
+                    while(world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher){
+                        offset = offset.offset(direction);
+                    }
+                    if(world.isAirBlock(offset)){
+                        // There is no block here.
+                        continue;
+                    }
+
+                    // We are ready to pull, but do we have enough life? Maybe.
+                    // This call will pull one item. We'll make one item cost 200. A stack of items is now 12,800 life
+                    if(this.getLife() < (200 * (funcoCount + 1))){
+                        continue;
+                    }
+                    boolean success = pullLiquids(offset, blockFace, filter);
+
+                    if(success){
+                        this.setLife(getLife() - (200 * (funcoCount + 1)));
+                    }
                 }
             }
         }
@@ -720,6 +790,53 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             }
         }
         return false;
+    }
+
+    private boolean pullLiquids(BlockPos place, EnumFacing face, ItemStack[] filter){
+        // Let's see if this block is a fluid handler, of some sort.
+        Block blockToSuckFrom = world.getBlockState(place).getBlock();
+
+        if(blockToSuckFrom instanceof BlockFluidBase){
+            // We can suck this block up into the tree.
+            // Find all connected blocks, though, and suck them up at once, to prevent infinite stuff.
+            return true;
+        }
+
+        // It wasn't a block fluid, but maybe it's some sort of tank.
+
+        IFluidHandler handler = FluidUtil.getFluidHandler(world, place, face);
+        if(handler == null){
+            // We cannot pull from this block, at all. So return
+            return false;
+        }
+        // This is indeed a fluid handler. It might not have one of our fluids, though.
+
+        int amtToPull = 100 + (this.funcoCount * 100);
+        int count = 0;
+
+        // Go through the filter - for each slot checking if it holds some kind of fluid
+        // if so, see if we can drain that fluid from the handler.
+        for(ItemStack stack : filter){
+            Fluid f = null;
+            FluidStack attemptedDrain = handler.drain(new FluidStack(f, amtToPull - count), true);
+            if(attemptedDrain == null){
+                // This handler didn't have it.
+                continue;
+            }
+            // We were able to pull it
+            count += attemptedDrain.amount;
+            // TODO add it to the first available fluid hollow.
+            if(count == amtToPull){
+                break;
+            }
+        }
+
+        if(count == 0){
+            // We pulled nothing.
+            return false;
+        }
+
+        return true;
     }
 
     private boolean pullItems(BlockPos place, EnumFacing face, ItemStack[] filter) {

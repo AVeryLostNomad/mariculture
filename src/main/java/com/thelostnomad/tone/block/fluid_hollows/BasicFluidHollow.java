@@ -1,67 +1,50 @@
-package com.thelostnomad.tone.block;
+package com.thelostnomad.tone.block.fluid_hollows;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.block.tileentity.TEFluidHollow;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
-import com.thelostnomad.tone.block.tileentity.TEStorageHollow;
 import com.thelostnomad.tone.util.ChatUtil;
 import com.thelostnomad.tone.util.ITree;
-import com.thelostnomad.tone.util.RecipeUtil;
 import com.thelostnomad.tone.util.TreeUtil;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyInteger;
-import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.*;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BasicStorageHollow extends BlockContainer implements ITree {
+public class BasicFluidHollow extends BlockContainer implements ITree {
 
-    public BasicStorageHollow() {
+    public BasicFluidHollow() {
         super(Material.WOOD);
-        setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".storagehollow_basic");     // Used for localization (en_US.lang)
-        setRegistryName("storagehollow_basic");        // The unique name (within your mod) that identifies this block
-        this.setCreativeTab(CreativeTabs.BUILDING_BLOCKS);     // the block will appear on the Blocks tab.
+        setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".fluidhollow_basic");     // Used for localization (en_US.lang)
+        setRegistryName("fluidhollow_basic");        // The unique name (within your mod) that identifies this block
         setCreativeTab(ThingsOfNaturalEnergies.creativeTab);
     }
 
-    /**
-     * Create the Tile Entity for this block.
-     * If your block doesn't extend BlockContainer, use createTileEntity(World worldIn, IBlockState state) instead
-     *
-     * @param worldIn
-     * @param meta
-     * @return
-     */
-
+    @Nullable
     @Override
     public TileEntity createNewTileEntity(World worldIn, int meta) {
-        TEStorageHollow e = new TEStorageHollow();
-        e.setStorageLevel(TEStorageHollow.HollowType.BASIC);
+        TEFluidHollow e = new TEFluidHollow();
+        e.setStorageLevel(TEFluidHollow.HollowType.BASIC);
         return e;
     }
 
@@ -83,24 +66,24 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
             return true;
         TileEntity te = worldIn.getTileEntity(pos);
         if (te == null) return true;
-        if (te instanceof TEStorageHollow) {
-            TEStorageHollow storage = (TEStorageHollow) te;
+        if (te instanceof TEFluidHollow) {
+            TEFluidHollow storage = (TEFluidHollow) te;
 
-            int filled = storage.getFilled();
-            int cap = storage.getCapacity();
+            long filled = storage.getFilledMillibuckets();
+            long cap = storage.getCapacityMillibuckets();
             double percentage = filled / (double) cap;
             percentage *= 100D;
 
             List<ITextComponent> toSend = new ArrayList<ITextComponent>();
-            toSend.add(new TextComponentString("This storage hollow is " + String.valueOf(percentage) + " filled " +
+            toSend.add(new TextComponentString("This fluid hollow is " + String.valueOf(percentage) + " filled " +
                     "(" + String.valueOf(filled) + "/" + String.valueOf(cap) + ")"));
-            Map<String, Integer> ah = new HashMap<String, Integer>();
-            for(ItemStack is : storage.getItemStacks()){
-                RecipeUtil.ComparableItem ci = new RecipeUtil.ComparableItem(is.getItem());
-                if(ah.containsKey(ci.toString())){
-                    ah.put(ci.toString(), ah.get(ci.toString()) + is.getCount());
+            Map<String, Long> ah = new HashMap<String, Long>();
+            for(Fluid f : storage.getFluids()){
+                String key = I18n.translateToLocal(f.getUnlocalizedName());
+                if(ah.containsKey(key)){
+                    ah.put(key, ah.get(key) + storage.amountFluid(f));
                 }else{
-                    ah.put(ci.toString(), is.getCount());
+                    ah.put(key, storage.amountFluid(f));
                 }
             }
             toSend.add(new TextComponentString(ah.toString()));
@@ -113,44 +96,14 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
     // This is where you can do something when the block is broken. In this case drop the inventory's contents
     @Override
     public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
-        IInventory inventory = worldIn.getTileEntity(pos) instanceof IInventory ? (IInventory) worldIn.getTileEntity(pos) : null;
-
-        if (inventory != null) {
-            // For each slot in the inventory
-            for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                // If the slot is not empty
-                if (!inventory.getStackInSlot(i).isEmpty())  // isEmpty
-                {
-                    // Create a new entity item with the item stack in the slot
-                    EntityItem item = new EntityItem(worldIn, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, inventory.getStackInSlot(i));
-
-                    // Apply some random motion to the item
-                    float multiplier = 0.1f;
-                    float motionX = worldIn.rand.nextFloat() - 0.5f;
-                    float motionY = worldIn.rand.nextFloat() - 0.5f;
-                    float motionZ = worldIn.rand.nextFloat() - 0.5f;
-
-                    item.motionX = motionX * multiplier;
-                    item.motionY = motionY * multiplier;
-                    item.motionZ = motionZ * multiplier;
-
-                    // Spawn the item in the world
-                    worldIn.spawnEntity(item);
-                }
-            }
-
-            // Clear the inventory so nothing else (such as another mod) can do anything with the items
-            inventory.clear();
-        }
-
         TileEntity thisTE = worldIn.getTileEntity(pos);
-        if (thisTE != null && thisTE instanceof TEStorageHollow) {
-            TEStorageHollow thisHollow = (TEStorageHollow) thisTE;
+        if (thisTE != null && thisTE instanceof TEFluidHollow) {
+            TEFluidHollow thisHollow = (TEFluidHollow) thisTE;
             if (thisHollow.getCoreLocation() != null) {
                 TileEntity te = worldIn.getTileEntity(thisHollow.getCoreLocation());
                 if (te != null && te instanceof TESentientTreeCore) {
                     TESentientTreeCore core = (TESentientTreeCore) te;
-                    core.removeStorageHollow(pos);
+                    core.removeFluidHollow(pos);
                 }
             }
         }
@@ -205,7 +158,7 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
             if (!worldIn.isRemote) {
                 if (placer instanceof EntityPlayer) {
                     List<ITextComponent> toSend = new ArrayList<ITextComponent>();
-                    toSend.add(new TextComponentString("Without a core nearby, there can be no storage hollow."));
+                    toSend.add(new TextComponentString("Without a core nearby, there can be no fluid hollow."));
                     ChatUtil.sendNoSpam((EntityPlayer) placer, toSend.toArray(new ITextComponent[toSend.size()]));
                 }
             } else {
@@ -217,50 +170,12 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
         }
 
         TileEntity tileentity = worldIn.getTileEntity(core);
-        if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
+        if (tileentity instanceof TEFluidHollow) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
-            tileEntityData.addStorageHollow(pos);
-            TEStorageHollow thisStorageHollow = (TEStorageHollow) worldIn.getTileEntity(pos);
+            tileEntityData.addFluidHollow(pos);
+            TEFluidHollow thisStorageHollow = (TEFluidHollow) worldIn.getTileEntity(pos);
             thisStorageHollow.setCoreLocation(core);
         }
 
     }
-
-    public String debugTab(IBlockAccess world, BlockPos pos) {
-        TileEntity tileEntity = world.getTileEntity(pos);
-        if (tileEntity instanceof TEStorageHollow) {
-            String toReturn = "";
-            TEStorageHollow teStorageHollow = (TEStorageHollow) tileEntity;
-            int filled = teStorageHollow.getFilled();
-            toReturn += "Filled: " + String.valueOf(filled);
-            int capacity = teStorageHollow.getCapacity();
-            toReturn += " Capacity: " + String.valueOf(capacity);
-            BigDecimal a = new BigDecimal((double) filled / (double) capacity);
-            toReturn += " Percent: " + String.valueOf(a);
-            BigDecimal b = a.setScale(1, RoundingMode.HALF_EVEN);
-            toReturn += " Rounded: " + String.valueOf(b);
-            b = b.multiply(new BigDecimal(10));
-            toReturn += " Multiplied: " + String.valueOf(b);
-            int filledAmt = MathHelper.clamp(b.intValue(), 0, 10);
-            toReturn += " Final: " + String.valueOf(filledAmt);
-            return toReturn;
-        }
-        return "";
-    }
-
-    public int tabulateDesiredFill(IBlockAccess world, BlockPos pos) {
-        TileEntity tileEntity = world.getTileEntity(pos);
-        if (tileEntity instanceof TEStorageHollow) {
-            TEStorageHollow teStorageHollow = (TEStorageHollow) tileEntity;
-            int filled = teStorageHollow.getFilled();
-            int capacity = teStorageHollow.getCapacity();
-            BigDecimal a = new BigDecimal((double) filled / (double) capacity);
-            BigDecimal b = a.setScale(1, RoundingMode.HALF_EVEN);
-            b = b.multiply(new BigDecimal(10));
-            int filledAmt = MathHelper.clamp(b.intValue(), 0, 10);
-            return filledAmt;
-        }
-        return -1;
-    }
-
 }

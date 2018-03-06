@@ -91,6 +91,9 @@ public class ModModelManager {
                 ModBlocks.storageHollowBasic.getDefaultState()
         );
         registerBlockItemModel(
+                ModBlocks.fluidHollowBasic.getDefaultState()
+        );
+        registerBlockItemModel(
                 ModBlocks.rootsBlock.getDefaultState()
         );
         registerBlockItemModel(

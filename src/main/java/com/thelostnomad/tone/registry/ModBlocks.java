@@ -6,7 +6,8 @@ import com.thelostnomad.tone.block.berries.BlockBerry;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
-import jdk.nashorn.internal.ir.Block;
+import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
+import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
@@ -26,6 +27,8 @@ public class ModBlocks {
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_basic")
     public static BasicStorageHollow storageHollowBasic;
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:fluidhollow_basic")
+    public static BasicFluidHollow fluidHollowBasic;
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:sentient_leaves")
     public static SentientLeaves sentientLeaves;
