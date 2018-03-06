@@ -67,11 +67,15 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     private Integer funcoCount = 0;
     private Integer craftoCount = 0; // TODO implement later.
     private Integer rezzoCount = 0;
+    private Integer ordinoCount = 0;
 
     // For rezzoberry
     private EntityLiving targetSpawn = null;
     private Integer lifeContributedSoFar = 0;
     private Integer lifeNeeded = 0;
+
+    // For ordinoberry
+    private EntityLiving targetAttack = null;
 
     private Double life = 0D;
     private Double maxLife = 0D; // The maximum amount of life that can be stored in this thing.
@@ -142,6 +146,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("glutocount", new NBTTagInt(glutoCount));
         parentNBTTagCompound.setTag("funcocount", new NBTTagInt(funcoCount));
         parentNBTTagCompound.setTag("rezzocount", new NBTTagInt(rezzoCount));
+        parentNBTTagCompound.setTag("ordinocount", new NBTTagInt(ordinoCount));
         /**
          * private EntityLiving targetSpawn = null;
          private Integer lifeContributedSoFar = 0;
@@ -225,6 +230,8 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if(funcoCount == null) funcoCount = 0;
         rezzoCount = parentNBTTagCompound.getInteger("rezzocount");
         if(rezzoCount == null) rezzoCount = 0;
+        ordinoCount = parentNBTTagCompound.getInteger("ordinocount");
+        if(ordinoCount == null) ordinoCount = 0;
 
         /*
         NBTTagCompound entityTargetTag = new NBTTagCompound();
@@ -316,6 +323,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if(world.getBlockState(position).getBlock() instanceof RezzoBerry){
             this.rezzoCount ++;
         }
+        if(world.getBlockState(position).getBlock() instanceof OrdinoBerry){
+            this.ordinoCount ++;
+        }
         this.berries.add(position);
     }
 
@@ -334,6 +344,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
         if(name.equals("rezzoberry")){
             this.rezzoCount--;
+        }
+        if(name.equals("ordinoberry")){
+            this.ordinoCount--;
         }
         this.berries.remove(position);
     }
@@ -515,6 +528,70 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                 }
             }
         }
+
+        if(ordinoCount > 0){
+            // We can attempt to mount a defense against nearby hostile mobs.
+            // By default, we will only target hostile mobs. (mobs that have ill intent)
+            // TODO We can change this by adding a voroberry to the tree. Makes it target all entities.
+            // TODO adding a Luxoberry to the tree will make it target only entities with above a certain hp threshold.
+            if(targetAttack == null){
+                selectAttackTarget();
+                return;
+            }
+
+            // TODO check to see if we should still care about this target. Is he out of range? Is it dead? ETC...
+            boolean shootTheTarget = shouldContinueFiringAtTarget();
+            if(!shootTheTarget){
+                targetAttack = null; // Mark us for ready to select a new target
+                return;
+            }
+        }
+    }
+
+    private boolean shouldContinueFiringAtTarget(){
+        // TODO do some stuff to evaluate whether this is still an effective target.
+        double maxRange = 2D * ordinoCount;
+        if(maxRange > 50D){
+            // We have 25 ordinoberries on this thing. We're getting a little unrealistic.
+            maxRange = 50D;
+        }
+        if(Math.sqrt(targetAttack.getDistanceSq(pos)) < maxRange){
+            return false;
+        }
+
+        return true; // Return true by default, false if any conditions above are met.
+    }
+
+    // Ordino count directly affects the range at which hostile mobs will be targeted
+    private void selectAttackTarget() {
+        List<EntityLiving> possibleHostiles = MobUtil.getMobsWithHostileBehavior(world);
+
+        List<EntityLiving> possibleTargets = new ArrayList<>();
+
+        possibleTargets.addAll(world.getEntities(EntityLiving.class, new Predicate<EntityLiving>() {
+            @Override
+            public boolean apply(@Nullable EntityLiving input) {
+                boolean found = false;
+                for(EntityLiving type : possibleHostiles){
+                    if(input.getClass().getName().compareTo(type.getClass().getName()) == 0){
+                        // The same type of entity, at least!
+                        double maxRange = 2D * ordinoCount;
+                        if(maxRange > 50D){
+                            // We have 25 ordinoberries on this thing. We're getting a little unrealistic.
+                            maxRange = 50D;
+                        }
+                        if(Math.sqrt(input.getDistanceSq(pos)) < maxRange){
+                            // Close by, too!
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+        }));
+
+        // Set that target!
+        this.targetAttack = possibleTargets.get(world.rand.nextInt(possibleTargets.size()));
     }
 
     private void selectSpawnTarget() {

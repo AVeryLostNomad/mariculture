@@ -6,6 +6,7 @@ import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.entity.EntityLiving;
+import net.minecraft.entity.ai.EntityAITasks;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -17,12 +18,48 @@ import net.minecraft.world.storage.loot.LootTableManager;
 
 import java.lang.reflect.*;
 import java.security.Security;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MobUtil {
+
+    public static List<EntityLiving> getMobsWithHostileBehavior(World w){
+        List<ResourceLocation> allKnownEntitiesNow = new ArrayList<ResourceLocation>(EntityList.getEntityNameList());
+        List<Class<? extends EntityLiving>> livingEntityClasses = new ArrayList<>();
+        for(ResourceLocation rl : allKnownEntitiesNow){
+            Class<? extends Entity> e = EntityList.getClassFromName(rl.toString());
+            if(e == null || e.getName() == null) continue;
+            if(EntityLiving.class.isAssignableFrom(e)){
+                // An entity living
+                livingEntityClasses.add((Class<? extends EntityLiving>) e);
+            }
+        }
+
+        // Go through every task in these entities.
+        List<EntityLiving> hostile = new ArrayList<>();
+        for(Class<? extends EntityLiving> e : livingEntityClasses){
+            try {
+                EntityLiving el = (EntityLiving) e.getConstructor(World.class).newInstance(w);
+
+                Set<EntityAITasks.EntityAITaskEntry> taskEntrySet = el.targetTasks.taskEntries;
+                for(EntityAITasks.EntityAITaskEntry task : taskEntrySet){
+                    if(task.getClass().getName().toLowerCase().contains("attack")){
+                        // yeah, okay, it's hostile.
+                        hostile.add(el);
+                        break;
+                    }
+                }
+            } catch (InstantiationException e1) {
+                e1.printStackTrace();
+            } catch (IllegalAccessException e1) {
+                e1.printStackTrace();
+            } catch (InvocationTargetException e1) {
+                e1.printStackTrace();
+            } catch (NoSuchMethodException e1) {
+                e1.printStackTrace();
+            }
+        }
+        return hostile;
+    }
 
     public static List<EntityLiving> mobsForItemLoot(World w, List<ItemStack> lootItems){
         List<ResourceLocation> allKnownEntitiesNow = new ArrayList<ResourceLocation>(EntityList.getEntityNameList());

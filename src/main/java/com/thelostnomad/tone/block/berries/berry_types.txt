@@ -27,13 +27,6 @@ Voroberry -    As a block, makes the tree consume literally every ounce of life 
                As an item, gives increased saturation and hunger refil on food items for 5 minutes
                A tree will immediately suck up this essence if put into a seeping alchemy process, so it is not possible to make the pool form.
                Grow in the nether to have a chance at this item. (Again, low chance)
-Hydroberry -   As a block, makes the tree passively convert some life into an internal water buffer.
-               As an item, water breathing for 5 minutes.
-               This water can be output through the conventional means.
-               More hydroberries = more conversion
-               Grow in an ocean biome for a 20% chance at hydroberries.
-Lactoberry -   Passively converts life into milk
-               As an item, clears potion effects
 [IB] Funcoberry -   Makes the tree draw one more item at a time. (From multiple stacks, that is)
                27 funcoberries will have the tree draw simultaneously from all stacks in a chest. Can be extended to other inventories.
                Adds a multiplier on the cost for each action, so with one funcoberry, each action (pulling two items, for example, will cost double (400 instead of 200))
