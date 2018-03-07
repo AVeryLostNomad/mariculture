@@ -1,5 +1,7 @@
 package com.thelostnomad.tone.block.tileentity;
 
+import java.util.HashMap;
+
 import com.google.common.base.Predicate;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.BlockPuller;
@@ -7,6 +9,7 @@ import com.thelostnomad.tone.block.BlockPusher;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
+import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.item.tokens.ItemToken;
 import com.thelostnomad.tone.registry.ModItems;
 import com.thelostnomad.tone.util.CraftingOperation;
@@ -24,6 +27,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.nbt.*;
+import com.thelostnomad.tone.util.MobUtil;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -33,10 +37,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.BlockFluidBase;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.*;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
@@ -60,11 +61,17 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     private long tickcount = 0;
     private Long tickRate = 60L; // For a tree without hastoberries, this is the default. One action cycle every three
-                                // seconds.
+    // seconds.
 
     private Integer glutoCount = 0;
     private Integer funcoCount = 0;
     private Integer craftoCount = 30; // TODO implement later.
+    private Integer rezzoCount = 0;
+
+    // For rezzoberry
+    private EntityLiving targetSpawn = null;
+    private Integer lifeContributedSoFar = 0;
+    private Integer lifeNeeded = 0;
 
     private Double life = 0D;
     private Double maxLife = 0D; // The maximum amount of life that can be stored in this thing.
@@ -76,8 +83,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     //  Not really required for this example since we only use the timer on the client, but included anyway for illustration
     @Override
     @Nullable
-    public SPacketUpdateTileEntity getUpdatePacket()
-    {
+    public SPacketUpdateTileEntity getUpdatePacket() {
         NBTTagCompound nbtTagCompound = new NBTTagCompound();
         writeToNBT(nbtTagCompound);
         int metadata = getBlockMetadata();
@@ -90,32 +96,30 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     /* Creates a tag containing the TileEntity information, used by vanilla to transmit from server to client
-   */
+     */
     @Override
-    public NBTTagCompound getUpdateTag()
-    {
+    public NBTTagCompound getUpdateTag() {
         NBTTagCompound nbtTagCompound = new NBTTagCompound();
         writeToNBT(nbtTagCompound);
         return nbtTagCompound;
     }
 
-    public void reIndexRoots(){
+    public void reIndexRoots() {
         roots = TreeUtil.findAllConnectedRoots(world, pos.down());
     }
 
-    public void addRoot(BlockPos pos){
+    public void addRoot(BlockPos pos) {
         this.roots.add(pos);
     }
 
-    public void removeRoot(BlockPos pos){
+    public void removeRoot(BlockPos pos) {
         this.roots.remove(pos);
     }
 
     /* Populates this TileEntity with information from the tag, used by vanilla to transmit from server to client
-   */
+     */
     @Override
-    public void handleUpdateTag(NBTTagCompound tag)
-    {
+    public void handleUpdateTag(NBTTagCompound tag) {
         this.readFromNBT(tag);
     }
 
@@ -124,9 +128,49 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     //  data as well to serve as an example.
     // NBTexplorer is a very useful tool to examine the structure of your NBT saved data and make sure it's correct:
     //   http://www.minecraftforum.net/forums/mapping-and-modding/minecraft-tools/1262665-nbtexplorer-nbt-editor-for-windows-and-mac
+
+
+    private void selectSpawnTarget() {
+        List<EntityLiving> el = MobUtil.mobsForItemLoot(world, allItemsInStorage());
+        if (el.size() == 0) return;
+        Map<Integer, EntityLiving> oddsBreakdown = new HashMap<>();
+        int total = 0;
+        for (EntityLiving e : el) {
+            if (LifeUtil.getLifeForEntity(e) > getMaxLife()) {
+                // We have no way of making this entity.
+                // Skip it
+                continue;
+            }
+            total += LifeUtil.getLifeForEntity(e);
+            oddsBreakdown.put(Integer.valueOf(total), e);
+        }
+        boolean found = false;
+        EntityLiving last = null;
+        while (oddsBreakdown.size() > 1 && !found) {
+            // Eliminate mobs to select
+            int rand = world.rand.nextInt(total);
+            for (Map.Entry<Integer, EntityLiving> entry : oddsBreakdown.entrySet()) {
+                if (rand < entry.getKey()) {
+                    last = entry.getValue();
+                    continue;
+                } else {
+                    // We've reached the end of the line. rand is too big. Get the last one that it was less than
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (last == null) {
+            last = el.get(0);
+        }
+
+        targetSpawn = last;
+        lifeContributedSoFar = 0;
+        lifeNeeded = (int) LifeUtil.getLifeForEntity(targetSpawn) * 2;
+    }
+
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound parentNBTTagCompound)
-    {
+    public NBTTagCompound writeToNBT(NBTTagCompound parentNBTTagCompound) {
         super.writeToNBT(parentNBTTagCompound); // The super call is required to save the tiles location
 
         parentNBTTagCompound.setTag("tickRate", new NBTTagLong(tickRate));
@@ -134,9 +178,19 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("maxlife", new NBTTagDouble(maxLife));
         parentNBTTagCompound.setTag("glutocount", new NBTTagInt(glutoCount));
         parentNBTTagCompound.setTag("funcocount", new NBTTagInt(funcoCount));
+        parentNBTTagCompound.setTag("rezzocount", new NBTTagInt(rezzoCount));
+
+        NBTTagCompound entityTargetTag = new NBTTagCompound();
+        if (targetSpawn != null) {
+            targetSpawn.writeEntityToNBT(entityTargetTag);
+            parentNBTTagCompound.setTag("target_spawn", entityTargetTag);
+            parentNBTTagCompound.setTag("target_spawn_name", new NBTTagString(targetSpawn.getClass().getName()));
+        }
+        parentNBTTagCompound.setTag("lifeContributedSoFar", new NBTTagInt(lifeContributedSoFar));
+        parentNBTTagCompound.setTag("lifeNeeded", new NBTTagInt(lifeNeeded));
 
         NBTTagList shs = new NBTTagList();
-        for(BlockPos b : this.storageHollows){
+        for (BlockPos b : this.storageHollows) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
@@ -146,7 +200,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("storageHollows", shs);
 
         NBTTagList fhs = new NBTTagList();
-        for(BlockPos b : this.fluidHollows){
+        for (BlockPos b : this.fluidHollows) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
@@ -156,7 +210,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("fluidHollows", fhs);
 
         NBTTagList pullers = new NBTTagList();
-        for(BlockPos b : this.pullers){
+        for (BlockPos b : this.pullers) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
@@ -165,7 +219,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
         parentNBTTagCompound.setTag("pullers", pullers);
         NBTTagList pushers = new NBTTagList();
-        for(BlockPos b : this.pushers){
+        for (BlockPos b : this.pushers) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
@@ -175,7 +229,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("pushers", pushers);
 
         NBTTagList berries = new NBTTagList();
-        for(BlockPos b : this.berries){
+        for (BlockPos b : this.berries) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
@@ -185,7 +239,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("berries", berries);
 
         NBTTagList roots = new NBTTagList();
-        for(BlockPos b : this.roots){
+        for (BlockPos b : this.roots) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
@@ -199,118 +253,179 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     // This is where you load the data that you saved in writeToNBT
     @Override
-    public void readFromNBT(NBTTagCompound parentNBTTagCompound)
-    {
+    public void readFromNBT(NBTTagCompound parentNBTTagCompound) {
         super.readFromNBT(parentNBTTagCompound); // The super call is required to load the tiles location
 
         tickRate = parentNBTTagCompound.getLong("tickRate");
-        if(tickRate == null) tickRate = 60L;
+        if (tickRate == null) tickRate = 60L;
         life = parentNBTTagCompound.getDouble("life");
-        if(life == null) life = 0D;
+        if (life == null) life = 0D;
         maxLife = parentNBTTagCompound.getDouble("maxlife");
-        if(maxLife == null) maxLife = 0D;
+        if (maxLife == null) maxLife = 0D;
         glutoCount = parentNBTTagCompound.getInteger("glutocount");
-        if(glutoCount == null) glutoCount = 0;
+        if (glutoCount == null) glutoCount = 0;
         funcoCount = parentNBTTagCompound.getInteger("funcocount");
-        if(funcoCount == null) funcoCount = 0;
+        if (funcoCount == null) funcoCount = 0;
+        rezzoCount = parentNBTTagCompound.getInteger("rezzocount");
+        if (rezzoCount == null) rezzoCount = 0;
+        lifeNeeded = parentNBTTagCompound.getInteger("lifeNeeded");
+        if (lifeNeeded == null) lifeNeeded = 0;
 
-        NBTTagList hollows = parentNBTTagCompound.getTagList("storageHollows",10);
-        for(int i = 0; i < hollows.tagCount(); i++){
+        lifeContributedSoFar = parentNBTTagCompound.getInteger("lifeContributedSoFar");
+        if (lifeContributedSoFar == null) lifeContributedSoFar = 0;
+        if (lifeNeeded == lifeContributedSoFar) {
+            lifeContributedSoFar = (int) (lifeContributedSoFar / 2D);
+        }
+        try {
+            NBTTagCompound entityTargetTag = parentNBTTagCompound.getCompoundTag("target_spawn");
+            Class<? extends EntityLiving> entityClass = null;
+            entityClass = (Class<? extends EntityLiving>) Class.forName(parentNBTTagCompound.getString("target_spawn_name"));
+            EntityLiving el = (EntityLiving) entityClass.getConstructor(World.class).newInstance(world);
+            el.readEntityFromNBT(entityTargetTag);
+            targetSpawn = el;
+        } catch (Exception e) {
+            targetSpawn = null;
+        }
+
+        NBTTagList hollows = parentNBTTagCompound.getTagList("storageHollows", 10);
+        for (int i = 0; i < hollows.tagCount(); i++) {
             NBTTagCompound comp = hollows.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.storageHollows.add(pos);
         }
-        NBTTagList fluidHollows = parentNBTTagCompound.getTagList("fluidHollows",10);
-        for(int i = 0; i < fluidHollows.tagCount(); i++){
+        NBTTagList fluidHollows = parentNBTTagCompound.getTagList("fluidHollows", 10);
+        for (int i = 0; i < fluidHollows.tagCount(); i++) {
             NBTTagCompound comp = fluidHollows.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.fluidHollows.add(pos);
         }
-        NBTTagList pullers = parentNBTTagCompound.getTagList("pullers",10);
-        for(int i = 0; i < pullers.tagCount(); i++){
+        NBTTagList pullers = parentNBTTagCompound.getTagList("pullers", 10);
+        for (int i = 0; i < pullers.tagCount(); i++) {
             NBTTagCompound comp = pullers.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.pullers.add(pos);
         }
-        NBTTagList pushers = parentNBTTagCompound.getTagList("pushers",10);
-        for(int i = 0; i < pushers.tagCount(); i++){
+        NBTTagList pushers = parentNBTTagCompound.getTagList("pushers", 10);
+        for (int i = 0; i < pushers.tagCount(); i++) {
             NBTTagCompound comp = pushers.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.pushers.add(pos);
         }
         NBTTagList berries = parentNBTTagCompound.getTagList("berries", 10);
-        for(int i = 0; i < berries.tagCount(); i++){
+        for (int i = 0; i < berries.tagCount(); i++) {
             NBTTagCompound comp = berries.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.berries.add(pos);
         }
         NBTTagList roots = parentNBTTagCompound.getTagList("roots", 10);
-        for(int i = 0; i < roots.tagCount(); i++){
+        for (int i = 0; i < roots.tagCount(); i++) {
             NBTTagCompound comp = roots.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.roots.add(pos);
         }
 
     }
+
+    public EntityLiving getSpawnTarget() {
+        return this.targetSpawn;
+    }
+
+    public void setSpawnTarget(EntityLiving newTarget) {
+        this.targetSpawn = newTarget;
+    }
+
+    public int getContributedToSpawn() {
+        return this.lifeContributedSoFar;
+    }
+
+    public int getNeededToSpawn() {
+        return this.lifeNeeded;
+    }
+
     public void addBerry(BlockPos position) {
-        if(world.getBlockState(position).getBlock() instanceof HastoBerry){
-            this.tickRate --;
-            if(this.tickRate < 1){
+        if (world.getBlockState(position).getBlock() instanceof HastoBerry) {
+            this.tickRate--;
+            if (this.tickRate < 1) {
                 this.tickRate = 1L;
             }
         }
-        if(world.getBlockState(position).getBlock() instanceof GlutoBerry){
-            this.glutoCount ++;
+        if (world.getBlockState(position).getBlock() instanceof GlutoBerry) {
+            this.glutoCount++;
         }
-        if(world.getBlockState(position).getBlock() instanceof FuncoBerry){
-            this.funcoCount ++;
+        if (world.getBlockState(position).getBlock() instanceof FuncoBerry) {
+            this.funcoCount++;
+        }
+        if (world.getBlockState(position).getBlock() instanceof RezzoBerry) {
+            this.rezzoCount++;
         }
         this.berries.add(position);
     }
 
-    public void removeBerry(BlockPos position, String name){
-        if(name.equals("hastoberry")){
-            this.tickRate ++;
-            if(this.tickRate > 60){
+    public void removeBerry(BlockPos position, String name) {
+        if (name.equals("hastoberry")) {
+            this.tickRate++;
+            if (this.tickRate > 60) {
                 this.tickRate = 60L;
             }
         }
-        if(name.equals("glutoberry")){
+        if (name.equals("glutoberry")) {
             this.glutoCount--;
         }
-        if(name.equals("funcoberry")){
+        if (name.equals("funcoberry")) {
             this.funcoCount--;
-            ThingsOfNaturalEnergies.logger.error("New funco: " + this.funcoCount);
+        }
+        if (name.equals("rezzoberry")) {
+            this.rezzoCount--;
         }
         this.berries.remove(position);
     }
 
-    public void addStorageHollow(BlockPos position){
+    public void addStorageHollow(BlockPos position) {
         this.storageHollows.add(position);
     }
 
-    public void addFluidHollow(BlockPos position){
+    public void addFluidHollow(BlockPos position) {
         this.fluidHollows.add(position);
     }
 
-    public void removeFluidHollow(BlockPos position) { this.fluidHollows.remove(position);}
+    public void removeFluidHollow(BlockPos position) {
+        this.fluidHollows.remove(position);
+    }
 
-    public void removeStorageHollow(BlockPos position){
+    public void removeStorageHollow(BlockPos position) {
         this.storageHollows.remove(position);
     }
 
-    public void addPuller(BlockPos position) { this.pullers.add(position); }
+    public void addPuller(BlockPos position) {
+        this.pullers.add(position);
+    }
 
-    public void removePuller(BlockPos position) { this.pullers.remove(position); }
+    public void removePuller(BlockPos position) {
+        this.pullers.remove(position);
+    }
 
-    public void addPusher(BlockPos position) { this.pushers.add(position); }
+    public void addPusher(BlockPos position) {
+        this.pushers.add(position);
+    }
 
-    public void removePusher(BlockPos position) { this.pushers.remove(position); }
+    public void removePusher(BlockPos position) {
+        this.pushers.remove(position);
+    }
+
+    public boolean hasFluids() {
+        for (BlockPos bp : this.fluidHollows) {
+            TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
+            if (teFluidHollow.getFilled() != 0L) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public boolean hasItems() {
-        for(BlockPos bp : this.storageHollows){
+        for (BlockPos bp : this.storageHollows) {
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if(!teStorageHollow.isEmpty()){
+            if (!teStorageHollow.isEmpty()) {
                 return true;
             }
         }
@@ -318,9 +433,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean hasRoomLeft() {
-        for(BlockPos bp : this.storageHollows){
+        for (BlockPos bp : this.storageHollows) {
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if(!teStorageHollow.isFull()){
+            if (!teStorageHollow.isFull()) {
                 return true;
             }
         }
@@ -328,26 +443,94 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean hasFluidRoomLeft() {
-        for(BlockPos bp : this.fluidHollows){
+        for (BlockPos bp : this.fluidHollows) {
             TEFluidHollow teStorageHollow = (TEFluidHollow) world.getTileEntity(bp);
-            if(teStorageHollow.getFilledMillibuckets() != teStorageHollow.getCapacityMillibuckets()){
+            if (teStorageHollow.getFilled() != teStorageHollow.getCapacity()) {
                 return true;
             }
         }
         return false;
     }
 
-    public void storeItemInFirstOpenSlot(ItemStack stack){
-        for(BlockPos bp : this.storageHollows){
+    public void storeItemInFirstOpenSlot(ItemStack stack) {
+        for (BlockPos bp : this.storageHollows) {
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if(!teStorageHollow.isFull()){
+            if (!teStorageHollow.isFull()) {
                 teStorageHollow.addItem(stack);
                 return;
             }
         }
     }
 
-    public void reIndexMaxLife(){
+    // Additive liquid check. Can we remove this liquid, if we iterate through all fluid hollows?
+    public boolean canRemoveAllLiquid(Fluid fluid, Long amt) {
+        for (BlockPos bp : this.fluidHollows) {
+            TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
+            if (teFluidHollow.containsFluid(fluid)) {
+                // This guy has some of that fluid.
+                long amtFluid = teFluidHollow.amountFluid(fluid);
+
+                if (amtFluid >= amt) {
+                    return true;
+                } else {
+                    // We have less than needed
+                    amt -= amtFluid;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void doRemoveAllLiquid(Fluid fluid, Long amt) {
+        for (BlockPos bp : this.fluidHollows) {
+            TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
+            if (teFluidHollow.containsFluid(fluid)) {
+                // This guy has some of that fluid.
+                long amtFluid = teFluidHollow.amountFluid(fluid);
+
+                if (amtFluid >= amt) {
+                    teFluidHollow.removeFluid(fluid, amt);
+                } else {
+                    // We have less than needed
+                    teFluidHollow.removeFluid(fluid, amtFluid);
+                    amt -= amtFluid;
+                }
+            }
+        }
+    }
+
+    public boolean canStoreLiquid(Fluid fluid, Long amt) {
+        for (BlockPos bp : this.fluidHollows) {
+            TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
+            if (teFluidHollow.getFilled() <= (teFluidHollow.getCapacity() - amt)) {
+                // We're solid. We can fill it all entirely in here
+                return true;
+            } else if (teFluidHollow.getFilled() != teFluidHollow.getCapacity()) {
+                // We have some room
+                long amtCanHold = teFluidHollow.getCapacity() - teFluidHollow.getFilled();
+                amt -= amtCanHold;
+            }
+        }
+        return false;
+    }
+
+    public void doStoreLiquid(Fluid fluid, Long amt) {
+        for (BlockPos bp : this.fluidHollows) {
+            TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
+            if (teFluidHollow.getFilled() <= (teFluidHollow.getCapacity() - amt)) {
+                // We're solid. We can fill it all entirely in here
+                teFluidHollow.addFluid(fluid, amt);
+                return;
+            } else if (teFluidHollow.getFilled() != teFluidHollow.getCapacity()) {
+                // We have some room
+                long amtCanHold = teFluidHollow.getCapacity() - teFluidHollow.getFilled();
+                teFluidHollow.addFluid(fluid, amtCanHold);
+                amt -= amtCanHold;
+            }
+        }
+    }
+
+    public void reIndexMaxLife() {
         maxLife = (double) (2000 * TreeUtil.findAllTreeBlocks(world, pos).size());
     }
 
@@ -358,8 +541,8 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if (world.isRemote) return;   // don't bother doing anything on the client side.
 
         // Tick slowing thing
-        tickcount ++;
-        if(tickcount == Long.MAX_VALUE){
+        tickcount++;
+        if (tickcount == Long.MAX_VALUE) {
             tickcount = 0L;
         }
 
@@ -368,12 +551,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                 // Timer not up yet, continue
                 return;
             }
-        }catch(ArithmeticException e){
+        } catch (ArithmeticException e) {
             tickRate = 60L;
             return;
         }
 
-        if((tickcount % 1200) == 0){
+        if ((tickcount % 1200) == 0) {
             reIndexMaxLife();
         }
 
@@ -381,12 +564,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 // 																		you need to markDirty() to force a resend.  In this case, the client doesn't need to know
 
         // Item checks
-        if(!pullers.isEmpty() && hasRoomLeft()){
+        if (!pullers.isEmpty() && hasRoomLeft()) {
             // We can pull things, maybe!
-            for(BlockPos pos : pullers){
-                if(world.getBlockState(pos).getBlock() instanceof BlockPuller){
+            for (BlockPos pos : pullers) {
+                if (world.getBlockState(pos).getBlock() instanceof BlockPuller) {
                     TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
-                    if(tePuller == null) continue;
+                    if (tePuller == null) continue;
                     // We need to get the item filter, here.
                     ItemStack[] filter = tePuller.getStacks();
                     // We're in good shape. Get it's facing
@@ -394,33 +577,33 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     EnumFacing blockFace = direction.getOpposite();
                     BlockPos offset = pos.offset(direction);
                     // Allows us to stack functional blocks
-                    while(world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher){
+                    while (world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher) {
                         offset = offset.offset(direction);
                     }
-                    if(world.isAirBlock(offset)){
+                    if (world.isAirBlock(offset)) {
                         // There is no block here.
                         continue;
                     }
 
                     // We are ready to pull, but do we have enough life? Maybe.
                     // This call will pull one item. We'll make one item cost 200. A stack of items is now 12,800 life
-                    if(this.getLife() < (200 * (funcoCount + 1))){
+                    if (this.getLife() < (200 * (funcoCount + 1))) {
                         continue;
                     }
                     boolean success = pullItems(offset, blockFace, filter);
 
-                    if(success){
+                    if (success) {
                         this.setLife(getLife() - (200 * (funcoCount + 1)));
                     }
                 }
             }
         }
 
-        if(!pushers.isEmpty() && hasItems()){
-            for(BlockPos pos : pushers){
-                if(world.getBlockState(pos).getBlock() instanceof BlockPusher){
+        if (!pushers.isEmpty() && hasItems()) {
+            for (BlockPos pos : pushers) {
+                if (world.getBlockState(pos).getBlock() instanceof BlockPusher) {
                     TEPusher tePusher = (TEPusher) world.getTileEntity(pos);
-                    if(tePusher == null) continue;
+                    if (tePusher == null) continue;
 
                     ItemStack[] filter = tePusher.getStacks();
 
@@ -428,29 +611,29 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     EnumFacing blockface = direction.getOpposite();
                     BlockPos offset = pos.offset(direction);
 
-                    while(world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher){
+                    while (world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher) {
                         offset = offset.offset(direction);
                     }
-                    if(world.isAirBlock(offset)){
+                    if (world.isAirBlock(offset)) {
                         continue;
                     }
 
                     // What was true for pulling is also true for pushing
-                    if(this.getLife() < (200 * (funcoCount + 1))){
+                    if (this.getLife() < (200 * (funcoCount + 1))) {
                         continue;
                     }
                     boolean success = pushItemsIfPossible(offset, blockface, filter);
-                    if(success) this.setLife(getLife() - (200 * (funcoCount + 1)));
+                    if (success) this.setLife(getLife() - (200 * (funcoCount + 1)));
                 }
             }
         }
 
         // Let's do fluid stuff too!
-        if(!pullers.isEmpty() && hasFluidRoomLeft()){
+        if (!pullers.isEmpty() && hasFluidRoomLeft()) {
             // We can try to pull fluids, if we are capable of pulling fluids.
 
-            for(BlockPos pos : pullers){
-                if(world.getBlockState(pos).getBlock() instanceof BlockPuller) {
+            for (BlockPos pos : pullers) {
+                if (world.getBlockState(pos).getBlock() instanceof BlockPuller) {
                     TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
                     if (tePuller == null) continue;
 
@@ -459,22 +642,56 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     EnumFacing direction = world.getBlockState(pos).getValue(BlockPuller.FACING);
                     EnumFacing blockFace = direction.getOpposite();
                     BlockPos offset = pos.offset(direction);
-                    while(world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher){
+                    while (world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher) {
                         offset = offset.offset(direction);
                     }
-                    if(world.isAirBlock(offset)){
+                    if (world.isAirBlock(offset)) {
                         // There is no block here.
                         continue;
                     }
 
                     // We are ready to pull, but do we have enough life? Maybe.
                     // This call will pull one item. We'll make one item cost 200. A stack of items is now 12,800 life
-                    if(this.getLife() < (200 * (funcoCount + 1))){
+                    if (this.getLife() < (200 * (funcoCount + 1))) {
                         continue;
                     }
                     boolean success = pullLiquids(offset, blockFace, filter);
 
-                    if(success){
+                    if (success) {
+                        this.setLife(getLife() - (200 * (funcoCount + 1)));
+                    }
+                }
+            }
+        }
+
+        // Let's try fluid pushing, too!
+        if (!pushers.isEmpty() && hasFluids()) {
+            for (BlockPos pos : pushers) {
+                if (world.getBlockState(pos).getBlock() instanceof BlockPusher) {
+                    TEPusher tePusher = (TEPusher) world.getTileEntity(pos);
+                    if (tePusher == null) continue;
+
+                    ItemStack[] filter = tePusher.getStacks();
+                    // We're in good shape. Get it's facing
+                    EnumFacing direction = world.getBlockState(pos).getValue(BlockPuller.FACING);
+                    EnumFacing blockFace = direction.getOpposite();
+                    BlockPos offset = pos.offset(direction);
+                    while (world.getBlockState(offset).getBlock() instanceof BlockPuller || world.getBlockState(offset).getBlock() instanceof BlockPusher) {
+                        offset = offset.offset(direction);
+                    }
+                    if (world.isAirBlock(offset)) {
+                        // There is no block here.
+                        continue;
+                    }
+
+                    // We are ready to push, but do we have enough life? Maybe.
+                    // This call will pull one item. We'll make one item cost 200. A stack of items is now 12,800 life
+                    if (this.getLife() < (200 * (funcoCount + 1))) {
+                        continue;
+                    }
+                    boolean success = pushLiquids(offset, blockFace, filter);
+
+                    if (success) {
                         this.setLife(getLife() - (200 * (funcoCount + 1)));
                     }
                 }
@@ -482,28 +699,64 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
 
         pullLifeIntoSystem();
-    }
 
-    private void pullLifeIntoSystem(){
-        // Scan through all still connected root blocks and see if we can pull something here.
-        for(BlockPos bp : roots){
-            List<EntityLiving> nearbyEntities = world.getEntities(EntityLiving.class, new Predicate<EntityLiving>() {
-                @Override
-                public boolean apply(@Nullable EntityLiving input) {
-                    return (Math.sqrt(input.getPosition().distanceSq(bp.getX(), bp.getY(), bp.getZ())) < 5D) && ((input.getHealth() / input.getMaxHealth()) > 0.5F);
-                }
-            });
-            for(EntityLiving near : nearbyEntities){
-                double amt = LifeUtil.getLifeForEntity(near);
-                this.setLife(getLife() + amt);
-                if(this.life > this.maxLife){
-                    this.life = this.maxLife;
-                    return;
-                }
-                LifeUtil.deductLifeFromEntity(near);
+        if (rezzoCount > 0) {
+            // We can do some work towards spawning a creature.
+            if (targetSpawn == null) {
+                selectSpawnTarget();
+                return;
             }
 
-            if(glutoCount > 0){
+            int lifeToAdd = (rezzoCount * 50);
+            if (lifeToAdd > (lifeNeeded - lifeContributedSoFar)) {
+                lifeToAdd = (lifeNeeded - lifeContributedSoFar);
+            }
+            setLife(getLife() - lifeToAdd);
+            lifeContributedSoFar += lifeToAdd;
+            if (lifeContributedSoFar.equals(lifeNeeded)) {
+                // We have done enough. Let's spawn this gosh darn mob!
+                // Pick a random root block
+                BlockPos root = this.roots.get(world.rand.nextInt(this.roots.size()));
+                BlockPos spawnPos = root.up(4);
+                targetSpawn.setPosition(spawnPos.getX(), spawnPos.getY(), spawnPos.getZ());
+                targetSpawn.setHealth(targetSpawn.getMaxHealth());
+                try {
+                    if (targetSpawn == null || world == null) {
+                        return;
+                    }
+                    world.spawnEntity(targetSpawn);
+                    targetSpawn = null;
+                } catch (Exception e) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private void pullLifeIntoSystem() {
+        // Scan through all still connected root blocks and see if we can pull something here.
+        if (rezzoCount == 0) { // Rezoberries disable this
+            for (BlockPos bp : roots) {
+                List<EntityLiving> nearbyEntities = world.getEntities(EntityLiving.class, new Predicate<EntityLiving>() {
+                    @Override
+                    public boolean apply(@Nullable EntityLiving input) {
+                        return (Math.sqrt(input.getPosition().distanceSq(bp.getX(), bp.getY(), bp.getZ())) < 5D) && ((input.getHealth() / input.getMaxHealth()) > 0.5F);
+                    }
+                });
+                for (EntityLiving near : nearbyEntities) {
+                    double amt = LifeUtil.getLifeForEntity(near);
+                    this.setLife(getLife() + amt);
+                    if (this.life > this.maxLife) {
+                        this.life = this.maxLife;
+                        return;
+                    }
+                    LifeUtil.deductLifeFromEntity(near);
+                }
+            }
+        }
+
+        if (glutoCount > 0) {
+            for (BlockPos bp : roots) {
                 // We can feed on some items
                 List<EntityItem> nearbyItems = world.getEntities(EntityItem.class, new Predicate<EntityItem>() {
                     @Override
@@ -512,7 +765,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     }
                 });
                 // See if we have any food nearby
-                for(EntityItem i : nearbyItems) {
+                for (EntityItem i : nearbyItems) {
                     ItemStack stack = i.getItem();
                     int amt = stack.getCount();
                     ItemFood food = (ItemFood) stack.getItem();
@@ -530,13 +783,15 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                 }
             }
         }
+
+
     }
 
-    public double getLife(){
+    public double getLife() {
         return this.life;
     }
 
-    public void setLife(double amt){
+    public void setLife(double amt) {
         this.life = amt;
     }
 
@@ -544,13 +799,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return this.maxLife;
     }
 
-    private boolean itemContainedInStorage(ItemStack stackToFind){
-        for(BlockPos storage : storageHollows){
+    private boolean itemContainedInStorage(ItemStack stackToFind) {
+        for (BlockPos storage : storageHollows) {
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
-            for (int i = 0; i < storageHollow.getSizeInventory(); ++i)
-            {
+            for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
-                if(stack.isItemEqual(stackToFind)){
+                if (stack.isItemEqual(stackToFind)) {
                     return true;
                 }
             }
@@ -560,12 +814,11 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     private List<ItemStack> allItemsInStorage() {
         List<ItemStack> toReturn = new ArrayList<ItemStack>();
-        for(BlockPos storage : storageHollows){
+        for (BlockPos storage : storageHollows) {
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
-            for (int i = 0; i < storageHollow.getSizeInventory(); ++i)
-            {
+            for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
-                if(!stack.isEmpty()){
+                if (!stack.isEmpty()) {
                     toReturn.add(stack);
                 }
             }
@@ -573,52 +826,44 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return toReturn;
     }
 
-    private boolean pushItemsIfPossible(BlockPos place, EnumFacing face, ItemStack[] filter){
+    private boolean pushItemsIfPossible(BlockPos place, EnumFacing face, ItemStack[] filter) {
         IInventory target = TileEntityHopper.getInventoryAtPosition(world, place.getX(), place.getY(), place.getZ());
         boolean itemWasPushed = false;
-        if (target == null)
-        {
+        if (target == null) {
             return false;
-        }
-        else
-        {
+        } else {
             // There is an inventory here
-            if (this.isInventoryFull(target, face))
-            {
+            if (this.isInventoryFull(target, face)) {
                 // It's full
                 return false;
-            }
-            else
-            {
+            } else {
                 // See if we can find the items that go in here
 
                 int amtToPull = 1 + this.funcoCount;
                 int count = 0;
-                for(BlockPos storage : storageHollows){
+                for (BlockPos storage : storageHollows) {
                     TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
-                    for (int i = 0; i < storageHollow.getSizeInventory(); ++i)
-                    {
+                    for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                         ItemStack stack = storageHollow.getStackInSlot(i);
-                        if(!matchesFilter(stack, new CompareOptions(filter)))continue;
-                        if (!stack.isEmpty())
-                        {
+                        if (!matchesFilter(stack, new CompareOptions(filter))) continue;
+                        if (!stack.isEmpty()) {
                             ItemStack itemstack = storageHollow.getStackInSlot(i).copy().splitStack(1); // Get one item off the top
 
                             TileEntityHopper.putStackInInventoryAllSlots(storageHollow, target, itemstack, face);
                             itemWasPushed = true;
                             ItemStack second = storageHollow.decrStackSize(i, 1);
-                            if(second.isEmpty()){
+                            if (second.isEmpty()) {
                                 storageHollow.removeStackFromSlot(i);
                             }
                             count++;
-                            if(count == amtToPull){
+                            if (count == amtToPull) {
                                 break;
                             }
                         }
                     }
                 }
 
-                if(count == amtToPull)
+                if (count == amtToPull)
                     return itemWasPushed;
 
                 // See if we can output a crafted material? Sounds good
@@ -628,24 +873,24 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return itemWasPushed;
     }
 
-    private void tryAutocraft(ItemStack[] filter, int count, int amtToPull, IInventory target, EnumFacing face){
+    private void tryAutocraft(ItemStack[] filter, int count, int amtToPull, IInventory target, EnumFacing face) {
         List<ItemStack> alreadyHave = allItemsInStorage();
-        for(ItemStack is : filter){
-            if(is.isEmpty()) continue;
-            if(!(is.getItem() instanceof ItemToken) && !itemContainedInStorage(is)){
+        for (ItemStack is : filter) {
+            if (is.isEmpty()) continue;
+            if (!(is.getItem() instanceof ItemToken) && !itemContainedInStorage(is)) {
                 // It's not a token, so we can try to craft it!
                 CraftingOperation co = RecipeUtil.getRequiredItemsToMakeIfPossible(is.getItem(), alreadyHave);
-                if(co == null){
+                if (co == null) {
                     continue;
                 }
-                if(craftoCount >= co.getComplexity()){
+                if (craftoCount >= co.getComplexity()) {
                     // If we get here, we *can* craft this item, theoretically.
                     // So, let's do it.
-                    for(Map.Entry<Integer, RecipeUtil.ComparableItem> step : co.getSteps().entrySet()){
+                    for (Map.Entry<Integer, RecipeUtil.ComparableItem> step : co.getSteps().entrySet()) {
                         IRecipe recipe = RecipeUtil.getRecipe(step.getValue().getObject()).get(0);
-                        for(Ingredient i : recipe.getIngredients()){
-                            for(ItemStack stack : i.getMatchingStacks()){
-                                if(tryRemoveItemFromInventory(stack) != null)
+                        for (Ingredient i : recipe.getIngredients()) {
+                            for (ItemStack stack : i.getMatchingStacks()) {
+                                if (tryRemoveItemFromInventory(stack) != null)
                                     break;
                             }
                         }
@@ -665,19 +910,17 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
     }
 
-    private TEStorageHollow tryRemoveItemFromInventory(ItemStack stackToRemove){
-        for(BlockPos storage : storageHollows){
+    private TEStorageHollow tryRemoveItemFromInventory(ItemStack stackToRemove) {
+        for (BlockPos storage : storageHollows) {
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
-            for (int i = 0; i < storageHollow.getSizeInventory(); ++i)
-            {
+            for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
-                if (!stack.isEmpty())
-                {
-                    if(!stack.isItemEqual(stackToRemove)){
+                if (!stack.isEmpty()) {
+                    if (!stack.isItemEqual(stackToRemove)) {
                         continue;
                     }
                     ItemStack second = storageHollow.decrStackSize(i, stackToRemove.getCount());
-                    if(second.isEmpty()){
+                    if (second.isEmpty()) {
                         storageHollow.removeStackFromSlot(i);
                     }
                     return storageHollow;
@@ -687,33 +930,25 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return null;
     }
 
-    private boolean isInventoryFull(IInventory inventoryIn, EnumFacing side)
-    {
-        if (inventoryIn instanceof ISidedInventory)
-        {
-            ISidedInventory isidedinventory = (ISidedInventory)inventoryIn;
+    private boolean isInventoryFull(IInventory inventoryIn, EnumFacing side) {
+        if (inventoryIn instanceof ISidedInventory) {
+            ISidedInventory isidedinventory = (ISidedInventory) inventoryIn;
             int[] aint = isidedinventory.getSlotsForFace(side);
 
-            for (int k : aint)
-            {
+            for (int k : aint) {
                 ItemStack itemstack1 = isidedinventory.getStackInSlot(k);
 
-                if (itemstack1.isEmpty() || itemstack1.getCount() != itemstack1.getMaxStackSize())
-                {
+                if (itemstack1.isEmpty() || itemstack1.getCount() != itemstack1.getMaxStackSize()) {
                     return false;
                 }
             }
-        }
-        else
-        {
+        } else {
             int i = inventoryIn.getSizeInventory();
 
-            for (int j = 0; j < i; ++j)
-            {
+            for (int j = 0; j < i; ++j) {
                 ItemStack itemstack = inventoryIn.getStackInSlot(j);
 
-                if (itemstack.isEmpty() || itemstack.getCount() != itemstack.getMaxStackSize())
-                {
+                if (itemstack.isEmpty() || itemstack.getCount() != itemstack.getMaxStackSize()) {
                     return false;
                 }
             }
@@ -722,13 +957,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return true;
     }
 
-    private static boolean canExtractItemFromSlot(IInventory inventoryIn, ItemStack stack, int index, EnumFacing side)
-    {
-        return !(inventoryIn instanceof ISidedInventory) || ((ISidedInventory)inventoryIn).canExtractItem(index, stack, side);
+    private static boolean canExtractItemFromSlot(IInventory inventoryIn, ItemStack stack, int index, EnumFacing side) {
+        return !(inventoryIn instanceof ISidedInventory) || ((ISidedInventory) inventoryIn).canExtractItem(index, stack, side);
     }
 
-    private boolean compareItems(ItemStack toCheck, ItemStack filter, CompareOptions co){
-        if(filter == null){
+    private boolean compareItems(ItemStack toCheck, ItemStack filter, CompareOptions co) {
+        if (filter == null) {
             // We're checking for broad category type filters.
             /*
             public boolean pullAll = false; // Pull all items?
@@ -741,38 +975,38 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         public boolean compareEnchantment = false; // Should it have the same enchantment?
         public boolean pullAnyEnchantment = false; // Pull any random enchantment?
              */
-            if(co.pullAll) return true;
-            if(co.pullAnyEnchantment || co.pullAnyNBT){
-                if(toCheck.hasTagCompound()){
+            if (co.pullAll) return true;
+            if (co.pullAnyEnchantment || co.pullAnyNBT) {
+                if (toCheck.hasTagCompound()) {
                     return true;
                 }
             }
-        }else{
+        } else {
             // We have two items to compare
             // 'toCheck' is the item we're checking, filter is the item we're filtering
             boolean resultSoFar = true;
-            if(co.compareItemType){
-                if(toCheck.getItem() != filter.getItem()){
+            if (co.compareItemType) {
+                if (toCheck.getItem() != filter.getItem()) {
                     resultSoFar = false;
                 }
             }
-            if(co.compareItemName){
-                if(!toCheck.getDisplayName().equals(filter.getDisplayName())){
+            if (co.compareItemName) {
+                if (!toCheck.getDisplayName().equals(filter.getDisplayName())) {
                     resultSoFar = false;
                 }
             }
-            if(co.compareItemAmount){
-                if(toCheck.getCount() != filter.getCount()){
+            if (co.compareItemAmount) {
+                if (toCheck.getCount() != filter.getCount()) {
                     resultSoFar = false;
                 }
             }
-            if(co.compareMeta){
-                if(toCheck.getMetadata() != filter.getMetadata()){
+            if (co.compareMeta) {
+                if (toCheck.getMetadata() != filter.getMetadata()) {
                     resultSoFar = false;
                 }
             }
-            if(co.compareItemNBT || co.compareEnchantment){
-                if(!toCheck.getEnchantmentTagList().equals(filter.getEnchantmentTagList())){
+            if (co.compareItemNBT || co.compareEnchantment) {
+                if (!toCheck.getEnchantmentTagList().equals(filter.getEnchantmentTagList())) {
                     resultSoFar = false;
                 }
             }
@@ -781,57 +1015,160 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return false;
     }
 
-    private boolean matchesFilter(ItemStack item, CompareOptions co){
-        if(compareItems(item, null, co)) return true;
+    private boolean matchesFilter(ItemStack item, CompareOptions co) {
+        if (compareItems(item, null, co)) return true;
 
-        for(ItemStack stack : co.filterItems){
-            if(compareItems(item, stack, co)){
+        for (ItemStack stack : co.filterItems) {
+            if (compareItems(item, stack, co)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean pullLiquids(BlockPos place, EnumFacing face, ItemStack[] filter){
-        // Let's see if this block is a fluid handler, of some sort.
-        Block blockToSuckFrom = world.getBlockState(place).getBlock();
-
-        if(blockToSuckFrom instanceof BlockFluidBase){
-            // We can suck this block up into the tree.
-            // Find all connected blocks, though, and suck them up at once, to prevent infinite stuff.
-            return true;
-        }
-
-        // It wasn't a block fluid, but maybe it's some sort of tank.
-
+    private boolean pushLiquids(BlockPos place, EnumFacing face, ItemStack[] filter) {
         IFluidHandler handler = FluidUtil.getFluidHandler(world, place, face);
-        if(handler == null){
+        if (handler == null) {
             // We cannot pull from this block, at all. So return
+            ThingsOfNaturalEnergies.logger.error("No fluid handler there");
             return false;
         }
+
         // This is indeed a fluid handler. It might not have one of our fluids, though.
 
-        int amtToPull = 100 + (this.funcoCount * 100);
+        int amtToPush = 1000 + (this.funcoCount * 1000);
         int count = 0;
 
         // Go through the filter - for each slot checking if it holds some kind of fluid
-        // if so, see if we can drain that fluid from the handler.
-        for(ItemStack stack : filter){
+        // if so, see if we can add that fluid to the handler.
+        for (ItemStack stack : filter) {
             Fluid f = null;
-            FluidStack attemptedDrain = handler.drain(new FluidStack(f, amtToPull - count), true);
-            if(attemptedDrain == null){
-                // This handler didn't have it.
+
+            FluidStack heldInBucket = FluidUtil.getFluidContained(stack);
+            if (heldInBucket == null) {
+                // Was not a liquid bucket
                 continue;
             }
-            // We were able to pull it
-            count += attemptedDrain.amount;
-            // TODO add it to the first available fluid hollow.
-            if(count == amtToPull){
+            f = heldInBucket.getFluid();
+            ThingsOfNaturalEnergies.logger.error("We're trying to push " + f.getName());
+
+            int attemptedDrain = handler.fill(new FluidStack(f, amtToPush - count), false);
+            // Only simulate. There's a chance we can't actually do that
+            if (attemptedDrain == 0) {
+                // This handler didn't allow us to push this fluid out.
+                ThingsOfNaturalEnergies.logger.error("Didn't let us push");
+                continue;
+            }
+            // We were able to push it
+            ThingsOfNaturalEnergies.logger.error("It can push");
+            boolean worked = canRemoveAllLiquid(f, (long) amtToPush - count);
+            if (!worked) {
+                ThingsOfNaturalEnergies.logger.error("But we can't steal that liquid");
+                return false;
+            }else{
+                // It did work
+                handler.fill(new FluidStack(f, amtToPush-count), true);
+            }
+            ThingsOfNaturalEnergies.logger.error("And we can remove that liquid");
+            doRemoveAllLiquid(f, (long) amtToPush - count);
+            world.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ITEM_BUCKET_EMPTY, SoundCategory.PLAYERS, 1.0F, world.rand.nextFloat() * 0.1F + 0.9F);
+            count += attemptedDrain;
+
+            if (count == amtToPush) {
                 break;
             }
         }
 
-        if(count == 0){
+        if (count == 0) {
+            // We pulled nothing.
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean pullLiquids(BlockPos place, EnumFacing face, ItemStack[] filter) {
+        // Let's see if this block is a fluid handler, of some sort.
+        //Block blockToSuckFrom = world.getBlockState(place).getBlock();
+
+        // Don't think we need this?
+//        if (blockToSuckFrom instanceof BlockFluidBase) {
+//            // We can suck this block up into the tree.
+//            BlockFluidBase bfb = (BlockFluidBase) blockToSuckFrom;
+//
+//            Fluid fluid = bfb.getFluid();
+//
+//            boolean result = storeLiquidInFirstOpenSlot(fluid, 1000L);
+//
+//            if (result) {
+//                world.setBlockToAir(place);
+//                return true;
+//            }
+//
+//            return true;
+//        }
+
+        // It wasn't a block fluid, but maybe it's some sort of tank.
+
+        IFluidHandler handler = FluidUtil.getFluidHandler(world, place, face);
+        if (handler == null) {
+            // We cannot pull from this block, at all. So return
+            return false;
+        }
+
+        // This is indeed a fluid handler. It might not have one of our fluids, though.
+
+        int amtToPull = 1000 + (this.funcoCount * 1000);
+        int count = 0;
+
+        // Go through the filter - for each slot checking if it holds some kind of fluid
+        // if so, see if we can drain that fluid from the handler.
+        for (ItemStack stack : filter) {
+            Fluid f = null;
+
+            FluidStack heldInBucket = FluidUtil.getFluidContained(stack);
+            if (heldInBucket == null) {
+                // Was not a liquid bucket
+                continue;
+            }
+            f = heldInBucket.getFluid();
+
+            FluidStack attemptedDrain = handler.drain(new FluidStack(f, amtToPull - count), false);
+            boolean specialDrain = false;
+            if (attemptedDrain == null) {
+                // This handler didn't have one to the amount we would like to pull, how about if it's a fluid block?
+                // Those will only allow us to pull a bucket at once. If the life charge is proportional, that's not too
+                // sha
+                attemptedDrain = handler.drain(1000, false);
+                if (attemptedDrain == null) {
+                    continue;
+                } else {
+                    specialDrain = true;
+                }
+            }
+            // We were able to pull itboolean worked = storeLiquidInFirstOpenSlot(attemptedDrain.getFluid(), (long) attemptedDrain.amount);
+            boolean worked = canStoreLiquid(attemptedDrain.getFluid(), (long) attemptedDrain.amount);
+            if (!worked) {
+                // We can't actually fit this item in our inventory (which should be reflected by now, but just in case)
+                return false;
+            } else {
+                //It did work, actually drain it
+                if (!specialDrain) {
+                    handler.drain(new FluidStack(f, amtToPull - count), true);
+                } else {
+                    handler.drain(1000, true);
+                }
+            }
+            doStoreLiquid(attemptedDrain.getFluid(), (long) attemptedDrain.amount);
+            world.playSound(null, pos.getX(), pos.getY(), pos.getZ(), SoundEvents.ITEM_BUCKET_FILL, SoundCategory.PLAYERS, 1.0F, world.rand.nextFloat() * 0.1F + 0.9F);
+            count += attemptedDrain.amount;
+
+            if (count == amtToPull) {
+                break;
+            }
+        }
+
+        if (count == 0) {
             // We pulled nothing.
             return false;
         }
@@ -842,92 +1179,84 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     private boolean pullItems(BlockPos place, EnumFacing face, ItemStack[] filter) {
         IInventory target = TileEntityHopper.getInventoryAtPosition(world, place.getX(), place.getY(), place.getZ());
         boolean itemWasPulled = false;
-        if (target != null){
+        if (target != null) {
             // We can see this inventory
-            if(isInventoryEmpty(target, face)){
+            if (isInventoryEmpty(target, face)) {
                 // We could not pull an item from this block
                 return false;
             }
 
             int amtToPull = 1 + this.funcoCount;
             int count = 0;
-            if(target instanceof ISidedInventory) {
+            if (target instanceof ISidedInventory) {
                 ISidedInventory iSidedInventory = (ISidedInventory) target;
                 int[] aint = iSidedInventory.getSlotsForFace(face);
-                for(int i : aint){
+                for (int i : aint) {
                     ItemStack itemstack = target.getStackInSlot(i);
 
-                    if(!itemstack.isEmpty() && canExtractItemFromSlot(target, itemstack, i, face)){
+                    if (!itemstack.isEmpty() && canExtractItemFromSlot(target, itemstack, i, face)) {
                         // We're good - theoretically, for this item, but does it match the filter?
-                        if(!matchesFilter(itemstack, new CompareOptions(filter)))continue;
+                        if (!matchesFilter(itemstack, new CompareOptions(filter))) continue;
                         ItemStack one = itemstack.copy().splitStack(1);
                         storeItemInFirstOpenSlot(one);
                         itemWasPulled = true;
                         ItemStack second = target.decrStackSize(i, 1);
-                        if(second.isEmpty()){
+                        if (second.isEmpty()) {
                             target.removeStackFromSlot(i);
                         }
                         count++;
-                        if(count == amtToPull){
+                        if (count == amtToPull) {
                             break;
                         }
                     }
                 }
-            }else{
+            } else {
                 int j = target.getSizeInventory();
 
-                for(int k = 0; k < j; ++k){
+                for (int k = 0; k < j; ++k) {
                     ItemStack itemstack = target.getStackInSlot(k);
 
-                    if(!itemstack.isEmpty() && canExtractItemFromSlot(target, itemstack, k, face)){
+                    if (!itemstack.isEmpty() && canExtractItemFromSlot(target, itemstack, k, face)) {
                         // We're good - theoretically, for this item, but does it match the filter?
-                        if(!matchesFilter(itemstack, new CompareOptions(filter)))continue;
+                        if (!matchesFilter(itemstack, new CompareOptions(filter))) continue;
                         // We're good. Let's store it.
                         ItemStack one = itemstack.copy().splitStack(1);
 
                         storeItemInFirstOpenSlot(one);
                         itemWasPulled = true;
                         ItemStack second = target.decrStackSize(k, 1);
-                        if(second.isEmpty()){
+                        if (second.isEmpty()) {
                             target.removeStackFromSlot(k);
                         }
                         count++;
-                        if(count == amtToPull){
+                        if (count == amtToPull) {
                             break;
                         }
                     }
                 }
             }
-        }else{
+        } else {
             // There is no inventory here
             return false;
         }
         return itemWasPulled;
     }
 
-    private static boolean isInventoryEmpty(IInventory inventoryIn, EnumFacing side)
-    {
-        if (inventoryIn instanceof ISidedInventory)
-        {
-            ISidedInventory isidedinventory = (ISidedInventory)inventoryIn;
+    private static boolean isInventoryEmpty(IInventory inventoryIn, EnumFacing side) {
+        if (inventoryIn instanceof ISidedInventory) {
+            ISidedInventory isidedinventory = (ISidedInventory) inventoryIn;
             int[] aint = isidedinventory.getSlotsForFace(side);
 
-            for (int i : aint)
-            {
-                if (!isidedinventory.getStackInSlot(i).isEmpty())
-                {
+            for (int i : aint) {
+                if (!isidedinventory.getStackInSlot(i).isEmpty()) {
                     return false;
                 }
             }
-        }
-        else
-        {
+        } else {
             int j = inventoryIn.getSizeInventory();
 
-            for (int k = 0; k < j; ++k)
-            {
-                if (!inventoryIn.getStackInSlot(k).isEmpty())
-                {
+            for (int k = 0; k < j; ++k) {
+                if (!inventoryIn.getStackInSlot(k).isEmpty()) {
                     return false;
                 }
             }
@@ -953,13 +1282,13 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
         public ItemStack[] filterItems;
 
-        public CompareOptions(ItemStack[] filterItems){
+        public CompareOptions(ItemStack[] filterItems) {
             this.filterItems = filterItems;
 
             ArrayList<ItemStack> withSpecialsRemoved = new ArrayList<>();
             // TODO go through items in the filter list, find any special thigns and mark those flags.
-            for(ItemStack is : filterItems){
-                if(is.getItem() == ModItems.tokenPullAll){
+            for (ItemStack is : filterItems) {
+                if (is.getItem() == ModItems.tokenPullAll) {
                     // We don't need this one
                     pullAll = true;
                     continue;
@@ -968,7 +1297,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             }
 
             ItemStack[] newFilter = new ItemStack[withSpecialsRemoved.size()];
-            for(int i = 0; i < newFilter.length; i++){
+            for (int i = 0; i < newFilter.length; i++) {
                 newFilter[i] = withSpecialsRemoved.get(i);
             }
             this.filterItems = newFilter;

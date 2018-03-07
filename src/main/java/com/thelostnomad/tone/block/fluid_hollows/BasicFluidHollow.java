@@ -69,8 +69,8 @@ public class BasicFluidHollow extends BlockContainer implements ITree {
         if (te instanceof TEFluidHollow) {
             TEFluidHollow storage = (TEFluidHollow) te;
 
-            long filled = storage.getFilledMillibuckets();
-            long cap = storage.getCapacityMillibuckets();
+            long filled = storage.getFilled();
+            long cap = storage.getCapacity();
             double percentage = filled / (double) cap;
             percentage *= 100D;
 
@@ -170,7 +170,7 @@ public class BasicFluidHollow extends BlockContainer implements ITree {
         }
 
         TileEntity tileentity = worldIn.getTileEntity(core);
-        if (tileentity instanceof TEFluidHollow) { // prevent a crash if not the right type, or is null
+        if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
             tileEntityData.addFluidHollow(pos);
             TEFluidHollow thisStorageHollow = (TEFluidHollow) worldIn.getTileEntity(pos);

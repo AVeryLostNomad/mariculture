@@ -6,6 +6,8 @@ import com.thelostnomad.tone.block.berries.BlockBerry;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
+import com.thelostnomad.tone.block.berries.RezzoBerry;
+import com.thelostnomad.tone.block.fluid.BlockTransmutationGas;
 import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
 import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
 import net.minecraft.world.biome.Biome;
@@ -39,6 +41,9 @@ public class ModBlocks {
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:sentient_sapling")
     public static SentientSapling sentientSapling;
 
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:transmutation_gas")
+    public static BlockTransmutationGas transmutationGas;
+
     // Berries
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_hasto")
     public static HastoBerry hastoBerry;
@@ -46,6 +51,8 @@ public class ModBlocks {
     public static GlutoBerry glutoBerry;
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_funco")
     public static FuncoBerry funcoBerry;
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_rezzo")
+    public static RezzoBerry rezzoBerry;
 
     public static BlockBerry getBerryForBiome(Biome b){
         BlockBerry[] toCheck = new BlockBerry[]{hastoBerry, glutoBerry, funcoBerry};

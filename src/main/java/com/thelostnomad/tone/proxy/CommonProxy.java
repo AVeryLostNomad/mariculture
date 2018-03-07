@@ -5,14 +5,18 @@ import com.thelostnomad.tone.block.*;
 import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
+import com.thelostnomad.tone.block.berries.RezzoBerry;
+import com.thelostnomad.tone.block.fluid.BlockTransmutationGas;
 import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
 import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
 import com.thelostnomad.tone.block.tileentity.*;
 import com.thelostnomad.tone.registry.ModBlocks;
+import com.thelostnomad.tone.registry.ModFluids;
 import com.thelostnomad.tone.registry.ModGuiHandler;
 import com.thelostnomad.tone.registry.ModItems;
 import com.thelostnomad.tone.util.ChatUtil;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockTrapDoor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.item.EntityItem;
@@ -54,6 +58,7 @@ public class CommonProxy {
 
 
         NetworkRegistry.INSTANCE.registerGuiHandler(ThingsOfNaturalEnergies.instance, ModGuiHandler.getInstance());
+        ModFluids.registerFluids();
 
 
 //        blockSimple = (BlockSimple)(new BlockSimple().setUnlocalizedName("mbe01_block_simple_unlocalised_name"));
@@ -83,11 +88,13 @@ public class CommonProxy {
         event.getRegistry().register(new SentientLeaves());
         event.getRegistry().register(new BlockPuller());
         event.getRegistry().register(new BlockPusher());
+        event.getRegistry().register(new BlockTransmutationGas());
 
         //Berries
         event.getRegistry().register(new HastoBerry());
         event.getRegistry().register(new GlutoBerry());
         event.getRegistry().register(new FuncoBerry());
+        event.getRegistry().register(new RezzoBerry());
     }
 
     @SubscribeEvent
@@ -104,11 +111,14 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.hastoBerry).setRegistryName(ModBlocks.hastoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.glutoBerry).setRegistryName(ModBlocks.glutoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.funcoBerry).setRegistryName(ModBlocks.funcoBerry.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.rezzoBerry).setRegistryName(ModBlocks.rezzoBerry.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.transmutationGas).setRegistryName(ModBlocks.transmutationGas.getRegistryName()));
 
         event.getRegistry().register(ModItems.tokenPullAll);
         event.getRegistry().register(ModItems.hastoBerryItem);
         event.getRegistry().register(ModItems.glutoBerryItem);
         event.getRegistry().register(ModItems.funcoBerryItem);
+        event.getRegistry().register(ModItems.rezzoBerryItem);
         event.getRegistry().register(ModItems.shardOfSentience);
     }
 

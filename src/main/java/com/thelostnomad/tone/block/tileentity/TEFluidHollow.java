@@ -28,7 +28,7 @@ public class TEFluidHollow extends TileEntity {
         this.storageLevel = type;
     }
 
-    public long getFilledMillibuckets(){
+    public long getFilled(){
         long total = 0L;
         for(Map.Entry<Fluid, Long> e : millibucketsByFluid.entrySet()){
             total+=e.getValue();
@@ -38,10 +38,6 @@ public class TEFluidHollow extends TileEntity {
 
     public long getCapacity(){
         return (long) this.storageLevel.size;
-    }
-
-    public long getCapacityMillibuckets(){
-        return this.storageLevel.size * 1000L;
     }
 
     public void addFluid(Fluid f, Long millibuckets){
@@ -123,7 +119,7 @@ public class TEFluidHollow extends TileEntity {
 
         String level = parentNBTTagCompound.getString("Level");
         for (HollowType ht : HollowType.values()) {
-            if (ht.equals(level)) {
+            if (ht.name.equals(level)) {
                 this.storageLevel = ht;
                 break;
             }

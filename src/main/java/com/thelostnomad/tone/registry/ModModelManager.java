@@ -124,6 +124,9 @@ public class ModModelManager {
         registerBlockItemModel(
                 ModBlocks.sentientSapling.getDefaultState()
         );
+        registerBlockItemModel(
+                ModBlocks.transmutationGas.getDefaultState()
+        );
     }
 
     private final StateMapperBase propertyStringMapper = new StateMapperBase() {
