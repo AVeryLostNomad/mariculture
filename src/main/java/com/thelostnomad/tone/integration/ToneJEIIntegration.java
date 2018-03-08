@@ -12,7 +12,7 @@ public class ToneJEIIntegration implements IModPlugin {
     public void register(IModRegistry registry) {
         IRecipeTransferRegistry recipeTranferRegistry = registry.getRecipeTransferRegistry();
 
-
+        //recipeTransferRegistry.addRecipeTransferHandler(null, VanillaRecipeCategoryUid.CRAFTING);
     }
 
 }

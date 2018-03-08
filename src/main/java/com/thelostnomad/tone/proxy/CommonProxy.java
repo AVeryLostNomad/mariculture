@@ -55,6 +55,7 @@ public class CommonProxy {
         GameRegistry.registerTileEntity(TEFluidHollow.class, TEFluidHollow.NAME);
         GameRegistry.registerTileEntity(TEPuller.class, TEPuller.NAME);
         GameRegistry.registerTileEntity(TEPusher.class, TEPusher.NAME);
+        GameRegistry.registerTileEntity(TELivingCraftingStation.class, TELivingCraftingStation.NAME);
 
 
         NetworkRegistry.INSTANCE.registerGuiHandler(ThingsOfNaturalEnergies.instance, ModGuiHandler.getInstance());
@@ -89,6 +90,7 @@ public class CommonProxy {
         event.getRegistry().register(new BlockPuller());
         event.getRegistry().register(new BlockPusher());
         event.getRegistry().register(new BlockTransmutationGas());
+        event.getRegistry().register(new BlockLivingCraftingStation());
 
         //Berries
         event.getRegistry().register(new HastoBerry());
@@ -113,6 +115,7 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.funcoBerry).setRegistryName(ModBlocks.funcoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.rezzoBerry).setRegistryName(ModBlocks.rezzoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.transmutationGas).setRegistryName(ModBlocks.transmutationGas.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.livingCraftingStation).setRegistryName(ModBlocks.livingCraftingStation.getRegistryName()));
 
         event.getRegistry().register(ModItems.tokenPullAll);
         event.getRegistry().register(ModItems.hastoBerryItem);

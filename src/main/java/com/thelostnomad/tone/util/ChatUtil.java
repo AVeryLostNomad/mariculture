@@ -209,9 +209,14 @@ public class ChatUtil {
 
         @Override
         public void fromBytes(ByteBuf buf) {
-            chatLines = new ITextComponent[buf.readInt()];
-            for (int i = 0; i < chatLines.length; i++) {
-                chatLines[i] = ITextComponent.Serializer.jsonToComponent(ByteBufUtils.readUTF8String(buf));
+            try{
+                chatLines = new ITextComponent[buf.readInt()];
+                for (int i = 0; i < chatLines.length; i++) {
+                    chatLines[i] = ITextComponent.Serializer.jsonToComponent(ByteBufUtils.readUTF8String(buf));
+                }
+            }catch(Exception e){
+                // Some weird thing just happaned. Probably safe to ignore it.
+                return;
             }
         }
 

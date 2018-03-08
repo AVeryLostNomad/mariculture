@@ -2,76 +2,128 @@ package com.thelostnomad.tone.block.tileentity;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 
+// Much of the inspiration for this particular class comes from the TileBench class of Vanhal's
+// Just another Crafting Bench mod. While I did modify it significantly, his mod is released under the
+// COFH don't be a jerk license.
+
+/*
+I explicitly copied the portions of code dealing with the NonNullList of ItemStack saving and reading
+The rest was created by myself, without looking at his source.
+ */
 public class TELivingCraftingStation extends TileEntity implements IInventory {
 
     public static final String NAME = "tone_living_crafting_station";
     private BlockPos coreLocation = null;
 
-    private final int NUMBER_OF_SLOTS = 9; // 9 for crafting. 1 for output
-    private ItemStack[] itemStacks;
+    private NonNullList<ItemStack> slots;
 
     public TELivingCraftingStation() {
-        itemStacks = new ItemStack[NUMBER_OF_SLOTS];
-        clear();
+        slots = NonNullList.<ItemStack>withSize(12, ItemStack.EMPTY);
+    }
+
+    @Override
+    public final void readFromNBT(NBTTagCompound nbt) {
+        slots = NonNullList.<ItemStack>withSize(this.slots.size(), ItemStack.EMPTY);
+        super.readFromNBT(nbt);
+        if(nbt.hasKey("Items")){
+            ItemStackHelper.loadAllItems(nbt, this.slots);
+        }
+    }
+
+    public void setCoreLocation(BlockPos pos){
+        this.coreLocation = pos;
+    }
+
+    public BlockPos getCoreLocation() {
+        return coreLocation;
+    }
+
+    // We've been shoved this old item.
+    public boolean overStack(int slot, ItemStack oldStack){
+        // What do
+        if(slot == 10){
+            // This is the "send to storage" slot.
+            // so do that.
+            TESentientTreeCore core = (TESentientTreeCore) world.getTileEntity(coreLocation);
+            if(!core.hasRoomLeft()){
+                return false;
+            }
+            core.storeItemInFirstOpenSlot(oldStack);
+            return true;
+        }
+        if(slot == 11){
+            return true;
+        }
+        return true;
+    }
+
+    @Override
+    public final NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+        super.writeToNBT(nbt);
+        ItemStackHelper.saveAllItems(nbt, this.slots, false);
+        return nbt;
     }
 
     @Override
     public int getSizeInventory() {
-        return 0;
+        return slots.size();
     }
 
     @Override
     public boolean isEmpty() {
-        return false;
+        return slots.isEmpty();
     }
 
     @Override
     public ItemStack getStackInSlot(int index) {
-        return null;
+        return slots.get(index);
     }
 
     @Override
     public ItemStack decrStackSize(int index, int count) {
-        return null;
+        ItemStack i = slots.get(index);
+        if(i.isEmpty()) return i;
+        ItemStack other = i.splitStack(count);
+        return other;
     }
 
     @Override
     public ItemStack removeStackFromSlot(int index) {
-        return null;
+        return slots.remove(index);
     }
 
     @Override
     public void setInventorySlotContents(int index, ItemStack stack) {
-
+        slots.set(index, stack);
     }
 
     @Override
     public int getInventoryStackLimit() {
-        return 0;
+        return 64;
     }
 
     @Override
     public boolean isUsableByPlayer(EntityPlayer player) {
-        return false;
+        return true;
     }
 
     @Override
-    public void openInventory(EntityPlayer player) {
-
-    }
+    public void openInventory(EntityPlayer player) {    }
 
     @Override
-    public void closeInventory(EntityPlayer player) {
-
-    }
+    public void closeInventory(EntityPlayer player) {    }
 
     @Override
     public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return false;
+        if(index == 9) return false; // They're trying to put it into the slot for recipe output.
+        return true;
     }
 
     @Override
@@ -91,7 +143,7 @@ public class TELivingCraftingStation extends TileEntity implements IInventory {
 
     @Override
     public void clear() {
-
+        this.slots.clear();
     }
 
     @Override

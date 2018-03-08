@@ -44,6 +44,9 @@ public class ModBlocks {
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:transmutation_gas")
     public static BlockTransmutationGas transmutationGas;
 
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:living_crafting_station")
+    public static BlockLivingCraftingStation livingCraftingStation;
+
     // Berries
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_hasto")
     public static HastoBerry hastoBerry;
