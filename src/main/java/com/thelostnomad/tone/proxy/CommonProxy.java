@@ -48,6 +48,11 @@ public class CommonProxy {
 
     public static ItemBlock sentientLog;
 
+    /** Gets the client player clientside, or null serverside */
+    public EntityPlayer getClientPlayer() {
+        return null;
+    }
+
     public void preInit(FMLPreInitializationEvent e) {
         // Each of your tile entities needs to be registered with a name that is unique to your mod.
         GameRegistry.registerTileEntity(TESentientTreeCore.class, TESentientTreeCore.NAME);

@@ -16,7 +16,6 @@ import com.thelostnomad.tone.util.CraftingOperation;
 import com.thelostnomad.tone.util.LifeUtil;
 import com.thelostnomad.tone.util.RecipeUtil;
 import com.thelostnomad.tone.util.TreeUtil;
-import net.minecraft.block.Block;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.SoundEvents;
@@ -39,6 +38,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.*;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import scala.actors.threadpool.Arrays;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -432,6 +432,32 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return false;
     }
 
+    public ItemStack getFirstItemstackFromInventoryMatching(List<ItemStack> anyOfThese) {
+        for (BlockPos bp : this.storageHollows) {
+            TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
+            int i = 0;
+            for(ItemStack stack : teStorageHollow.getItemStacks()){
+                for(ItemStack toMatch : anyOfThese){
+                    if(stack.isItemEqual(toMatch)){
+                        // We're good here. We can pull out, if *and only if* we have enough quantity.
+                        if(stack.getCount() >= toMatch.getCount()){
+                            // This is the proper item!
+                            ItemStack toReturn = stack.splitStack(toMatch.getCount());
+
+                            if(stack.getCount() == 0){
+                                teStorageHollow.setInventorySlotContents(i, ItemStack.EMPTY);
+                            }
+
+                            return toReturn;
+                        }
+                    }
+                }
+                i ++;
+            }
+        }
+        return null;
+    }
+
     public boolean hasRoomLeft() {
         for (BlockPos bp : this.storageHollows) {
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
@@ -452,14 +478,14 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return false;
     }
 
-    public void storeItemInFirstOpenSlot(ItemStack stack) {
+    public boolean storeItemInFirstOpenSlot(ItemStack stack) {
         for (BlockPos bp : this.storageHollows) {
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if (!teStorageHollow.isFull()) {
-                teStorageHollow.addItem(stack);
-                return;
+            if (teStorageHollow.addItem(stack)) {
+                return true;
             }
         }
+        return false;
     }
 
     // Additive liquid check. Can we remove this liquid, if we iterate through all fluid hollows?
@@ -873,38 +899,45 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return itemWasPushed;
     }
 
-    private void tryAutocraft(ItemStack[] filter, int count, int amtToPull, IInventory target, EnumFacing face) {
+    // Will simply autocraft the item into a storage hollow
+    public boolean autocraftIfPossible(List<ItemStack> possibilities){
         List<ItemStack> alreadyHave = allItemsInStorage();
+        for(ItemStack is : possibilities) {
+            CraftingOperation co = RecipeUtil.getRequiredItemsToMakeIfPossible(is.getItem(), alreadyHave);
+            if (co == null) {
+                return false; // There's no way to reach it.
+            }
+            if (craftoCount >= co.getComplexity()) {
+                // If we get here, we *can* craft this item, theoretically.
+                // So, let's do it.
+                for (Map.Entry<Integer, RecipeUtil.ComparableItem> step : co.getSteps().entrySet()) {
+                    IRecipe recipe = RecipeUtil.getRecipe(step.getValue().getObject()).get(0);
+                    for (Ingredient i : recipe.getIngredients()) {
+                        for (ItemStack stack : i.getMatchingStacks()) {
+                            if (tryRemoveItemFromInventory(stack) != null)
+                                break;
+                        }
+                    }
+                    // Now that we've removed the necessary ingredients, let's pop out the output.
+                    storeItemInFirstOpenSlot(recipe.getRecipeOutput());
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void tryAutocraft(ItemStack[] filter, int count, int amtToPull, IInventory target, EnumFacing face) {
         for (ItemStack is : filter) {
             if (is.isEmpty()) continue;
             if (!(is.getItem() instanceof ItemToken) && !itemContainedInStorage(is)) {
                 // It's not a token, so we can try to craft it!
-                CraftingOperation co = RecipeUtil.getRequiredItemsToMakeIfPossible(is.getItem(), alreadyHave);
-                if (co == null) {
-                    continue;
-                }
-                if (craftoCount >= co.getComplexity()) {
-                    // If we get here, we *can* craft this item, theoretically.
-                    // So, let's do it.
-                    for (Map.Entry<Integer, RecipeUtil.ComparableItem> step : co.getSteps().entrySet()) {
-                        IRecipe recipe = RecipeUtil.getRecipe(step.getValue().getObject()).get(0);
-                        for (Ingredient i : recipe.getIngredients()) {
-                            for (ItemStack stack : i.getMatchingStacks()) {
-                                if (tryRemoveItemFromInventory(stack) != null)
-                                    break;
-                            }
-                        }
-                        // Now that we've removed the necessary ingredients, let's pop out the output.
-                        storeItemInFirstOpenSlot(recipe.getRecipeOutput());
+                boolean result = autocraftIfPossible(Arrays.asList(new ItemStack[]{is}));
+                if(result){
+                    count++;
+                    if(count == amtToPull){
+                        break;
                     }
-                    // We've done all the steps. Theoretically the final product is somewhere in there.
-                    //TEStorageHollow tesh = tryRemoveItemFromInventory(is);
-//                    TileEntityHopper.putStackInInventoryAllSlots(null, target, is, face);
-//                    count++;
-//                    if(count == amtToPull){
-//                        break;
-//                    }
-                    // This ought to have spit out the items, after decrementing the ingredients.
                 }
             }
         }

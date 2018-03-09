@@ -3,6 +3,7 @@ package com.thelostnomad.tone.block.container;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.gui.InventoryExtraSlot;
 import com.thelostnomad.tone.block.tileentity.TELivingCraftingStation;
+import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.network.LastRecipeMessage;
 import com.thelostnomad.tone.network.TonePacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,7 +19,7 @@ import net.minecraft.world.World;
 
 public class ContainerLivingCraftingStation extends Container {
 
-    private TELivingCraftingStation lcs;
+    public TELivingCraftingStation lcs;
 
     // Sortof a hybrid blend between tile entity and vanilla, we'll do a container side inventory too
     public IRecipe lastRecipe;
@@ -48,39 +49,52 @@ public class ContainerLivingCraftingStation extends Container {
         init = true;
 
         // ADD UI COMPONENTS
-        this.addSlotToContainer(new SlotCrafting(inv. player, craftMatrix, craftResult, 9, 124, 35));
+        this.addSlotToContainer(new SlotCrafting(inv. player, craftMatrix, craftResult, 9, 124 - 1, 35 - 1));
 
         // Adds the crafting grid to the container
         for (int i = 0; i < 3; ++i)
         {
             for (int j = 0; j < 3; ++j)
             {
-                this.addSlotToContainer(new Slot(this.craftMatrix, j + i * 3, 30 + j * 18, 17 + i * 18));
+                this.addSlotToContainer(new Slot(this.craftMatrix, j + i * 3, (30 + j * 18) - 1, (17 + i * 18) - 1));
             }
         }
 
-        this.addSlotToContainer(new Slot(storeSlot, 10, 188, 28));
-        this.addSlotToContainer(new Slot(deleteSlot, 11, 227, 28));
+        this.addSlotToContainer(new Slot(storeSlot, 10, 187, 27));
+        this.addSlotToContainer(new Slot(deleteSlot, 11, 226, 27));
 
         // Add the player's inventory.
         for (int k = 0; k < 3; ++k)
         {
             for (int i1 = 0; i1 < 9; ++i1)
             {
-                this.addSlotToContainer(new Slot(inv, i1 + k * 9 + 9, 8 + i1 * 18, 84 + k * 18));
+                this.addSlotToContainer(new Slot(inv, i1 + k * 9 + 9, (8 + i1 * 18) - 1, (84 + k * 18) - 1));
             }
         }
 
         // Add's the hotbar.
         for (int l = 0; l < 9; ++l)
         {
-            this.addSlotToContainer(new Slot(inv, l, 8 + l * 18, 142));
+            this.addSlotToContainer(new Slot(inv, l, (8 + l * 18) - 1, 142 - 1));
+        }
+    }
+
+    public void clearGrid(EntityPlayer playerIn) {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = this.craftMatrix.getStackInSlot(i);
+            if (stack != null) {
+                TESentientTreeCore core = (TESentientTreeCore) lcs.getWorld().getTileEntity(lcs.getCoreLocation());
+                boolean result = core.storeItemInFirstOpenSlot(stack);
+                this.craftMatrix.setInventorySlotContents(i, ItemStack.EMPTY);
+                if (!result) {
+                    playerIn.dropItem(stack, false);
+                }
+            }
         }
     }
 
     public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player)
     {
-        ThingsOfNaturalEnergies.logger.error(slotId);
         if(slotId == 10 || slotId == 11){
             // Let us handle that.
             Slot slot = this.inventorySlots.get(slotId);
@@ -136,7 +150,7 @@ public class ContainerLivingCraftingStation extends Container {
 
     public void updateLcs(){
         for(int i = 0; i < 9; i++){
-            lcs.setInventorySlotContents(i, lcs.getStackInSlot(i));
+            lcs.setInventorySlotContents(i, craftMatrix.getStackInSlot(i));
         }
         lcs.setInventorySlotContents(10, storeSlot.getStackInSlot(0));
         // 11 deleted

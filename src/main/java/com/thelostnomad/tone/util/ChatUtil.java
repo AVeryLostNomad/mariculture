@@ -179,7 +179,7 @@ public class ChatUtil {
      */
     public static void sendNoSpam(EntityPlayerMP player, ITextComponent... lines) {
         if (lines.length > 0)
-            TonePacketHandler.INSTANCE.sendTo(new PacketNoSpamChat(lines), player);
+            TonePacketHandler.MSG_INSTANCE.sendTo(new PacketNoSpamChat(lines), player);
     }
 
     /**

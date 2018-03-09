@@ -1,5 +1,8 @@
 package com.thelostnomad.tone.block.tileentity;
 
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.util.TreeUtil;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
@@ -32,6 +35,10 @@ public class TELivingCraftingStation extends TileEntity implements IInventory {
     public final void readFromNBT(NBTTagCompound nbt) {
         slots = NonNullList.<ItemStack>withSize(this.slots.size(), ItemStack.EMPTY);
         super.readFromNBT(nbt);
+
+        NBTTagCompound coreLoc = nbt.getCompoundTag("coreLocation");
+        coreLocation = new BlockPos(coreLoc.getInteger("x"),
+                coreLoc.getInteger("y"), coreLoc.getInteger("z"));
         if(nbt.hasKey("Items")){
             ItemStackHelper.loadAllItems(nbt, this.slots);
         }
@@ -52,10 +59,18 @@ public class TELivingCraftingStation extends TileEntity implements IInventory {
             // This is the "send to storage" slot.
             // so do that.
             TESentientTreeCore core = (TESentientTreeCore) world.getTileEntity(coreLocation);
-            if(!core.hasRoomLeft()){
+            if(core == null){
+                BlockPos loc = TreeUtil.findCore(world, pos);
+                setCoreLocation(loc);
+                if(loc == null){
+                    return false;
+                }
+                core = (TESentientTreeCore) world.getTileEntity(coreLocation);
+            }
+            boolean result = core.storeItemInFirstOpenSlot(oldStack);
+            if(!result){
                 return false;
             }
-            core.storeItemInFirstOpenSlot(oldStack);
             return true;
         }
         if(slot == 11){
@@ -67,7 +82,15 @@ public class TELivingCraftingStation extends TileEntity implements IInventory {
     @Override
     public final NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
+
         ItemStackHelper.saveAllItems(nbt, this.slots, false);
+
+        NBTTagCompound blockPosNBT = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
+        blockPosNBT.setInteger("x", coreLocation.getX());
+        blockPosNBT.setInteger("y", coreLocation.getY());
+        blockPosNBT.setInteger("z", coreLocation.getZ());
+        nbt.setTag("coreLocation", blockPosNBT);
+        ThingsOfNaturalEnergies.logger.error("Saving to coreLocation");
         return nbt;
     }
 

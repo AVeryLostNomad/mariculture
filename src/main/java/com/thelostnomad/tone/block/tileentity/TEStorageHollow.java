@@ -85,23 +85,23 @@ public class TEStorageHollow extends TileEntity implements IInventory {
         return total;
     }
 
-    public synchronized void addItem(ItemStack stack) {
-        if (this.getFilled() == this.getCapacity()) return;
-        int lastFilled = this.getFilled();
+    public synchronized boolean addItem(ItemStack stack) {
         boolean found = false;
         for (ItemStack i : itemStacks) {
             if (i.isEmpty()) continue;
             if (i.getItem() == stack.getItem()) {
                 // We can go ahead and put this here.
-                ThingsOfNaturalEnergies.logger.debug("INV STACK: " + String.valueOf(this.getInventoryStackLimit()));
-                if (i.getCount() == this.getInventoryStackLimit()) continue;
+                if ((i.getCount() + stack.getCount()) >= this.getInventoryStackLimit()) continue;
                 found = true;
-                i.setCount(i.getCount() + 1);
-                return;
+                i.setCount(i.getCount() + stack.getCount());
+                return true;
             }
         }
-        ThingsOfNaturalEnergies.logger.debug("Running");
-        if(!found) setInventorySlotContents(this.getFilled(), stack);
+        if(!found && (this.getFilled() != this.getCapacity())){
+            setInventorySlotContents(this.getFilled(), stack);
+            return true;
+        }
+        return false;
     }
 
     @Override

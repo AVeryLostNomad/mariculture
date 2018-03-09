@@ -31,7 +31,8 @@ public class GuiLivingCraftingStation extends GuiContainer {
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
         GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         this.mc.getTextureManager().bindTexture(background);
-        this.drawTexturedModalRect(20, 20, 0, 0, 264, 166);
+        drawModalRectWithCustomSizedTexture(guiLeft, guiTop, 1.0f, 1.0f, 264, 216, 512, 512);
+        //this.drawTexturedModalRect(20, 20, 0, 0, 264, 216);
     }
 
     public ContainerLivingCraftingStation getContainer() {
