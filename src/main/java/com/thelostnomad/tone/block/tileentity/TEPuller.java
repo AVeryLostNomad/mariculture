@@ -36,7 +36,7 @@ public class TEPuller extends TileEntity implements IInventory {
     public boolean isEmpty()
     {
         for (ItemStack itemstack : itemStacks) {
-            if (!itemstack.isEmpty()) {  // isEmpty()
+            if (!itemstack.isEmpty()) {  // terminal()
                 return false;
             }
         }
@@ -79,7 +79,7 @@ public class TEPuller extends TileEntity implements IInventory {
     @Override
     public void setInventorySlotContents(int slotIndex, ItemStack itemstack) {
         itemStacks[slotIndex] = itemstack;
-        if (itemstack.isEmpty() && itemstack.getCount() > getInventoryStackLimit()) { //  isEmpty(); getStackSize()
+        if (itemstack.isEmpty() && itemstack.getCount() > getInventoryStackLimit()) { //  terminal(); getStackSize()
             itemstack.setCount(getInventoryStackLimit());  //setStackSize
         }
         markDirty();
@@ -161,7 +161,7 @@ public class TEPuller extends TileEntity implements IInventory {
 
         NBTTagList dataForAllSlots = new NBTTagList();
         for (int i = 0; i < this.itemStacks.length; ++i) {
-            if (!this.itemStacks[i].isEmpty())	{ //isEmpty()
+            if (!this.itemStacks[i].isEmpty())	{ //terminal()
                 NBTTagCompound dataForThisSlot = new NBTTagCompound();
                 dataForThisSlot.setByte("Slot", (byte) i);
                 this.itemStacks[i].writeToNBT(dataForThisSlot);
@@ -177,7 +177,7 @@ public class TEPuller extends TileEntity implements IInventory {
     @Override
     public ItemStack removeStackFromSlot(int slotIndex) {
         ItemStack itemStack = getStackInSlot(slotIndex);
-        if (!itemStack.isEmpty()) setInventorySlotContents(slotIndex, ItemStack.EMPTY);  //isEmpty(), EMPTY_ITEM
+        if (!itemStack.isEmpty()) setInventorySlotContents(slotIndex, ItemStack.EMPTY);  //terminal(), EMPTY_ITEM
         return itemStack;
     }
 

@@ -114,7 +114,7 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
             // For each slot in the inventory
             for (int i = 0; i < inventory.getSizeInventory(); i++) {
                 // If the slot is not empty
-                if (!inventory.getStackInSlot(i).isEmpty())  // isEmpty
+                if (!inventory.getStackInSlot(i).isEmpty())  // terminal
                 {
                     // Create a new entity item with the item stack in the slot
                     EntityItem item = new EntityItem(worldIn, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, inventory.getStackInSlot(i));

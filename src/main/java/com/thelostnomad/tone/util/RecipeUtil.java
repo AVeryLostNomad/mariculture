@@ -81,6 +81,7 @@ public class RecipeUtil {
                 ah.put(ci.toString(), is.getCount());
             }
         }
+        ThingsOfNaturalEnergies.logger.error("Working on " + ah);
         return getRequiredItemsToMakeIfPossible(target, ah);
     }
 
@@ -91,6 +92,7 @@ public class RecipeUtil {
 
         if(!canCraft(new HashMap<String, Integer>(alreadyHave), baseBranch)){
             // No good! We can't make this item
+            ThingsOfNaturalEnergies.logger.error("We cannot make this item");
             return null;
         }
 

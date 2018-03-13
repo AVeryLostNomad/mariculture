@@ -48,7 +48,6 @@ public class LivingCraftingRecipeTransferHandler implements IRecipeTransferHandl
      */
     public IRecipeTransferError transferRecipe(ContainerLivingCraftingStation container, IRecipeLayout recipeLayout, EntityPlayer player, boolean maxTransfer, boolean doTransfer) {
         if(doTransfer){
-            ThingsOfNaturalEnergies.logger.error("Transfering, yeah");
             Map<Integer, IGuiIngredient<ItemStack>> inputs = (Map<Integer, IGuiIngredient<ItemStack>>) recipeLayout.getItemStacks().getGuiIngredients();
             NBTTagCompound recipe = new NBTTagCompound();
             JEIStackHelper helper = new JEIStackHelper();

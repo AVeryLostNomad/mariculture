@@ -1,9 +1,11 @@
 package com.thelostnomad.tone.util.crafting;
 
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
+import scala.math.Equiv;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,19 +25,30 @@ import java.util.Map;
 public class EquivalenceStack {
 
     // Hold all forms that this stack can take
-    private Map<Item, Integer> amountsByType = new HashMap<Item, Integer>();
-    private Map<Item, ArrayList<ConversionSpec>> conversions = new HashMap<Item, ArrayList<ConversionSpec>>();
+    private Map<ItemStack, Integer> amountsByType = new HashMap<ItemStack, Integer>();
+    private Map<ItemStack, ArrayList<ConversionSpec>> conversions = new HashMap<ItemStack, ArrayList<ConversionSpec>>();
 
-    public boolean hasAmount(Item requested, int amount){
+    public EquivalenceStack copy(){
+        EquivalenceStack newStack = new EquivalenceStack();
+        newStack.amountsByType = this.amountsByType;
+        newStack.conversions = this.conversions;
+        return newStack;
+    }
+
+    public void setAmount(ItemStack type, int newAmount){
+        amountsByType.put(templateStack(type), newAmount);
+    }
+
+    public boolean hasAmount(ItemStack requested, int amount){
         // Does this stack equate to the requested item
-        if(!amountsByType.containsKey(requested)) return false;
+        if(!contains(requested)) return false;
 
         // Do we already have the perfect amount of this item?
-        if(amountsByType.get(requested) >= amount) return true;
+        if(getAmountInInv(requested) >= amount) return true;
 
         // Can we convert to it?
-        for(Map.Entry<Item, ArrayList<ConversionSpec>> e : conversions.entrySet()){
-            if(e.getKey().equals(requested)) continue; // We would have caught this if we could.
+        for(Map.Entry<ItemStack, ArrayList<ConversionSpec>> e : conversions.entrySet()){
+            if(StackUtil.stacksEqual(e.getKey(), requested)) continue; // We would have caught this if we could.
 
             for(ConversionSpec cs : e.getValue()){
                 if(cs.convertingTo.equals(requested)){
@@ -53,60 +66,114 @@ public class EquivalenceStack {
         return false;
     }
 
+    public boolean contains(ItemStack stack){
+        for(Map.Entry<ItemStack, Integer> entry : amountsByType.entrySet()){
+            if(StackUtil.stacksEqual(entry.getKey(), stack)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int getAmountInInv(ItemStack stack){
+        return amountsByType.get(templateStack(stack));
+    }
+
+    private ItemStack templateStack(ItemStack in){
+        ItemStack toReturn = in.copy();
+        toReturn.setCount(1);
+        return toReturn;
+    }
+
     // Add a thing to the amountsByType list
     public void addTemplateComponent(ItemStack[] stacks){
         for(ItemStack stack : stacks){
-            for(Item s : amountsByType.keySet()){
-                if(stack.getItem().equals(s)){
-                    continue;
+            boolean skip = false;
+            for(ItemStack s : amountsByType.keySet()){
+                if(StackUtil.stacksEqual(s, stack)){
+                    skip = true;
+                    break;
                 }
             }
+            if(skip) continue;
 
-            amountsByType.put(stack.getItem(), 0);
+            amountsByType.put(templateStack(stack), 0);
             return;
         }
     }
 
-    private ItemStack getIngredientsNeeded(Item i){
+    private class ItemTuple {
+
+        public ItemStack stl;
+        public Integer resultAmt;
+
+        public ItemTuple(ItemStack stk, Integer res){
+            this.stl = stk;
+            this.resultAmt = res;
+        }
+
+    }
+
+    private ItemTuple getIngredientsNeeded(ItemStack i){
         int smallest = Integer.MAX_VALUE;
-        Item igType = null;
-        List<IRecipe> recipes = CraftTreeBuilder.getRecipe(new ItemStack(i));
+        int amtSpitOut = 0;
+        ItemStack igType = null;
+        List<IRecipe> recipes = CraftTreeBuilder.getRecipe(i);
         for(IRecipe recipe : recipes){
             int ingrdAmt = 0;
-            if(ingrdAmt < smallest){
-                smallest = ingrdAmt;
-            }
             for(Ingredient ig : recipe.getIngredients()){
                 if(ig.getMatchingStacks() == null) continue;
                 if(ig.getMatchingStacks().length == 0) continue;
                 if(ig.getMatchingStacks()[0] == null) continue;
                 if(ig.getMatchingStacks()[0].isEmpty()) continue;
-                igType = ig.getMatchingStacks()[0].getItem();
+                igType = ig.getMatchingStacks()[0];
+                amtSpitOut = recipe.getRecipeOutput().getCount();
                 ingrdAmt++;
             }
+            if(ingrdAmt < smallest){
+                smallest = ingrdAmt;
+            }
         }
-        return new ItemStack(igType, smallest);
+        if(igType == null){
+            return null;
+        }
+        ItemStack toReturn = igType.copy();
+        toReturn.setCount(smallest);
+        return new ItemTuple(toReturn, amtSpitOut);
     }
-
     public void retabulateConversionSpecs(){
         // We have an item, here. It is unfortunately unordered.
         // We need to ascertain how this item converts to other items.
-        for(Item s : amountsByType.keySet()){
+        for(ItemStack s : amountsByType.keySet()){
             // We've gotta go through the other items and find the one that goes in front of this.
-            List<ConversionSpec> thisConversionSpecs = new ArrayList<>();
-            for(Item i : amountsByType.keySet()){
-                if(i == s) continue;
+            ArrayList<ConversionSpec> thisConversionSpecs = new ArrayList<>();
+            for(ItemStack i : amountsByType.keySet()){
+                if(StackUtil.stacksEqual(i, s)) continue;
 
                 // We're checking things that are not the same
-                ItemStack neededForS = getIngredientsNeeded(s);
-                ItemStack neededForI = getIngredientsNeeded(i);
+                ItemTuple neededForS = getIngredientsNeeded(s);
+                ItemTuple neededForI = getIngredientsNeeded(i);
+                if(neededForI != null && StackUtil.stacksEqual(neededForI.stl, s)){
+                    ConversionSpec spec = new ConversionSpec(s, i, neededForI.stl.getCount(), neededForI.resultAmt);
+                    if(!thisConversionSpecs.contains(spec)){
+                        thisConversionSpecs.add(spec);
+                    }
+                }
+                if(neededForS != null && StackUtil.stacksEqual(neededForS.stl, i)){
+                    ConversionSpec spec = new ConversionSpec(i, s, neededForS.stl.getCount(), neededForS.resultAmt);
+                    if(!thisConversionSpecs.contains(spec)){
+                        thisConversionSpecs.add(spec);
+                    }
+                }
             }
+            conversions.put(s, thisConversionSpecs);
         }
+        // The thing should now contain several conversion specs.
     }
 
     public boolean containsAny(ItemStack[] stacks){
         for(ItemStack stack : stacks){
-            if(amountsByType.containsKey(stack.getItem())){
+            if(contains(stack)){
                 return true;
             }
         }
@@ -115,7 +182,7 @@ public class EquivalenceStack {
 
     public boolean containsAll(ItemStack[] stacks){
         for(ItemStack stack : stacks){
-            if(!amountsByType.containsKey(stack.getItem())){
+            if(!contains(stack)){
                 return false;
             }
         }
@@ -129,56 +196,89 @@ public class EquivalenceStack {
     // Remove a specific amount of an item, converting if necessary.
     // Returns the removed itemstack, if possible, otherwise
     // return null.
-    public ItemStack removeAmount(Item requested, int amount){
+    public ItemStack removeAmount(ItemStack requested, int amount){
         // Does this stack equate to the requested item
-        if(!amountsByType.containsKey(requested)) return null;
+        if(!amountsByType.containsKey(templateStack(requested))) return null;
 
         // Do we already have the perfect amount of this item?
-        if(amountsByType.get(requested) >= amount){
-            amountsByType.put(requested, amountsByType.get(requested) - amount);
-            return new ItemStack(requested, amount);
+        if(amountsByType.get(templateStack(requested)) >= amount){
+            amountsByType.put(templateStack(requested), amountsByType.get(templateStack(requested)) - amount);
+            ItemStack toReturn = requested.copy();
+            toReturn.setCount(amount);
+            return toReturn;
         }
 
         // Can we convert to it?
-        for(Map.Entry<Item, ArrayList<ConversionSpec>> e : conversions.entrySet()){
-            if(e.getKey().equals(requested)) continue; // We would have caught this if we could.
+        for(Map.Entry<ItemStack, ArrayList<ConversionSpec>> e : conversions.entrySet()){
+            if(StackUtil.stacksEqual(requested, e.getKey())) continue; // We would have caught this if we could.
 
             for(ConversionSpec cs : e.getValue()){
                 if(cs.convertingTo.equals(requested)){
                     // This is a conversion spec to the target value.
                     int neededConversions = (int) Math.ceil((double) amount / (double) cs.amtToMake);
 
-                    if(amountsByType.get(e.getKey()) < (neededConversions * cs.amtToTake)){
+                    if(amountsByType.get(templateStack(e.getKey())) < (neededConversions * cs.amtToTake)){
                         continue;
                     }
 
-                    amountsByType.put(e.getKey(), amountsByType.get(e.getKey()) - (neededConversions * cs.amtToTake));
-                    amountsByType.put(cs.convertingTo, amountsByType.get(cs.convertingTo) + (neededConversions * cs.amtToMake));
+                    amountsByType.put(templateStack(e.getKey()), amountsByType.get(templateStack(e.getKey())) - (neededConversions * cs.amtToTake));
+                    amountsByType.put(templateStack(cs.convertingTo), amountsByType.get(templateStack(cs.convertingTo)) + (neededConversions * cs.amtToMake));
                 }
             }
         }
 
         // Go back through and try to do the thing once more.
-        if(amountsByType.get(requested) >= amount){
-            amountsByType.put(requested, amountsByType.get(requested) - amount);
-            return new ItemStack(requested, amount);
+        if(amountsByType.get(templateStack(requested)) >= amount){
+            amountsByType.put(requested, amountsByType.get(templateStack(requested)) - amount);
+            ItemStack toReturn = requested.copy();
+            toReturn.setCount(amount);
+            return toReturn;
         }
 
         // We still couldn't do it. (Not enough to convert with, etc...)
         return null;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder toReturn = new StringBuilder();
+        for(Map.Entry<ItemStack, ArrayList<ConversionSpec>> e : conversions.entrySet()){
+            String s = "";
+            for(ConversionSpec cs : e.getValue()){
+                s += cs.toString();
+                s += "\n";
+            }
+            String thisLine = e.getKey().getUnlocalizedName() + " - \n" + s;
+            toReturn.append(thisLine);
+        }
+        return toReturn.toString();
+    }
+
     private class ConversionSpec {
         int amtToTake = 0;
         int amtToMake = 0;
-        Item convertingTo;
-        Item from;
+        ItemStack convertingTo;
+        ItemStack from;
 
-        public ConversionSpec(Item from, Item other, int amtNeeded, int amtToMake){
+        public ConversionSpec(ItemStack from, ItemStack other, int amtNeeded, int amtToMake){
             this.from = from;
-            convertingTo = other;
+            this.convertingTo = other;
             this.amtToTake = amtNeeded;
             this.amtToMake = amtToMake;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(!(obj instanceof ConversionSpec)){
+                return false;
+            }
+            ConversionSpec other = (ConversionSpec) obj;
+            return StackUtil.stacksEqual(other.convertingTo, convertingTo) && StackUtil.stacksEqual(other.from, from);
+        }
+
+        @Override
+        public String toString() {
+            return from.getDisplayName() + "x" + amtToTake + " -> " + convertingTo.getDisplayName() + "x" + amtToMake;
         }
     }
 

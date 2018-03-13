@@ -131,7 +131,7 @@ public class TEStorageHollow extends TileEntity implements IInventory {
     @Override
     public ItemStack removeStackFromSlot(int index) {
         ItemStack itemStack = getStackInSlot(index);
-        if (!itemStack.isEmpty()) setInventorySlotContents(index, ItemStack.EMPTY);  //isEmpty(), EMPTY_ITEM
+        if (!itemStack.isEmpty()) setInventorySlotContents(index, ItemStack.EMPTY);  //terminal(), EMPTY_ITEM
         return itemStack;
     }
 
@@ -139,7 +139,7 @@ public class TEStorageHollow extends TileEntity implements IInventory {
     @Override
     public void setInventorySlotContents(int slotIndex, ItemStack itemstack) {
         itemStacks[slotIndex] = itemstack;
-        if (itemstack.isEmpty() && itemstack.getCount() > getInventoryStackLimit()) { //  isEmpty(); getStackSize()
+        if (itemstack.isEmpty() && itemstack.getCount() > getInventoryStackLimit()) { //  terminal(); getStackSize()
             itemstack.setCount(getInventoryStackLimit());  //setStackSize
         }
         markDirty();
@@ -217,7 +217,7 @@ public class TEStorageHollow extends TileEntity implements IInventory {
 
         NBTTagList dataForAllSlots = new NBTTagList();
         for (int i = 0; i < this.itemStacks.length; ++i) {
-            if (!this.itemStacks[i].isEmpty()) { //isEmpty()
+            if (!this.itemStacks[i].isEmpty()) { //terminal()
                 NBTTagCompound dataForThisSlot = new NBTTagCompound();
                 dataForThisSlot.setInteger("Slot", i);
                 this.itemStacks[i].writeToNBT(dataForThisSlot);

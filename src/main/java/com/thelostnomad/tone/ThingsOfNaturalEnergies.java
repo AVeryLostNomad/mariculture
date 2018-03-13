@@ -3,12 +3,18 @@ package com.thelostnomad.tone;
 import com.thelostnomad.tone.network.TonePacketHandler;
 import com.thelostnomad.tone.proxy.CommonProxy;
 import com.thelostnomad.tone.util.RecipeUtil;
+import com.thelostnomad.tone.util.crafting.CraftTreeBuilder;
+import com.thelostnomad.tone.util.crafting.EquivalenceStack;
+import net.minecraft.item.Item;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.Map;
 
 @Mod(modid = ThingsOfNaturalEnergies.MODID, name = ThingsOfNaturalEnergies.MODNAME, version = ThingsOfNaturalEnergies.VERSION, useMetadata = true, dependencies="before:guideapi")
 public class ThingsOfNaturalEnergies {
@@ -42,7 +48,9 @@ public class ThingsOfNaturalEnergies {
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         proxy.postInit(event);
-        RecipeUtil.loadRecipes();
+//        RecipeUtil.loadRecipes();
+
+        CraftTreeBuilder.loadRecipes();
 //
 //        List<ItemStack> alreadyHave = new ArrayList<ItemStack>(Arrays.asList(new ItemStack[]{
 //            new ItemStack(Blocks.IRON_BLOCK, 2),
