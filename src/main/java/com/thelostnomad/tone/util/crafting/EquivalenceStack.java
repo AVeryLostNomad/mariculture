@@ -1,11 +1,8 @@
 package com.thelostnomad.tone.util.crafting;
 
-import com.thelostnomad.tone.ThingsOfNaturalEnergies;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
-import scala.math.Equiv;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,7 +73,12 @@ public class EquivalenceStack {
     }
 
     public int getAmountInInv(ItemStack stack){
-        return amountsByType.get(templateStack(stack));
+        for(Map.Entry<ItemStack, Integer> entry : amountsByType.entrySet()){
+            if(StackUtil.stacksEqual(entry.getKey(), stack)){
+                return entry.getValue();
+            }
+        }
+        return -1;
     }
 
     private ItemStack templateStack(ItemStack in){

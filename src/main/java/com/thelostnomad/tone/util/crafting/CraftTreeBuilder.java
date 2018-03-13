@@ -1,14 +1,11 @@
 package com.thelostnomad.tone.util.crafting;
 
-import com.thelostnomad.tone.util.RecipeUtil;
-import net.minecraft.item.Item;
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.common.asm.transformers.ItemStackTransformer;
-import scala.tools.nsc.transform.patmat.Logic;
 
 import java.util.*;
 
@@ -147,6 +144,42 @@ public class CraftTreeBuilder {
         return false;
     }
 
+    public static void findProcessToMake(ItemStack target, List<ItemStack> inventory){
+        InventoryWrapper wrap = new InventoryWrapper(inventory);
+
+        RecipeBranch baseBranch = new RecipeBranch(null, target, 0, 1);
+
+        ThingsOfNaturalEnergies.logger.error("Can craft? " + canCraft(wrap, baseBranch));
+    }
+
+    private static boolean canCraft(InventoryWrapper inventory, RecipeBranch branch){
+        boolean totalApprox = true;
+        ThingsOfNaturalEnergies.logger.error("This branch focus: " + branch.target.getDisplayName());
+        for(RecipeBranch rb : branch.getSubBranches()){
+            // For each one, do we have that item? If not, return
+            ItemStack targetGoal = rb.target.copy();
+            targetGoal.setCount(rb.amtMade);
+            if(inventory.hasItemstack(targetGoal)){
+                // We do have it, but we probably should remove one off the top
+                inventory.getItemstack(targetGoal);
+            }else{
+                // We do not have the item.
+                // Is there any way we might be able to make it from its parts?
+                if(rb.getSubBranches().size() != 0){
+                    // We have a chance, there are subbranches here
+                    if(!canCraft(inventory, rb)){
+                        totalApprox = false;
+                    }
+                }else{
+                    // There is no way to get this item.
+                    totalApprox = false;
+                    break;
+                }
+            }
+        }
+        return totalApprox;
+    }
+
     public static EquivalenceStack getEquivalenceStack(ItemStack i){
         for(EquivalenceStack es : equivalenceStacks){
             if(es.contains(i)){
@@ -190,7 +223,48 @@ public class CraftTreeBuilder {
                         equivalenceStacks.add(toAdd);
                     }
                 }
+
+                // This is a normal item
+                standardStacks.add(s);
             }
+        }
+
+        public boolean hasItemstack(ItemStack stack){
+            for(ItemStack is : standardStacks){
+                if(is.isItemEqual(stack)){
+                    if(is.getCount() > stack.getCount()){
+                        return true;
+                    }
+                }
+            }
+
+            for(EquivalenceStack es : equivalenceStacks){
+                ThingsOfNaturalEnergies.logger.error("Going through equi stack");
+                if(es.hasAmount(stack, stack.getCount())){
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public ItemStack getItemstack(ItemStack stack){
+            for(ItemStack is : standardStacks){
+                if(is.isItemEqual(stack)){
+                    if(is.getCount() > stack.getCount()){
+                        // This is a valid item
+                        return is.splitStack(stack.getCount());
+                    }
+                }
+            }
+
+            for(EquivalenceStack es : equivalenceStacks){
+                if(es.hasAmount(stack, stack.getCount())){
+                    return es.removeAmount(stack, stack.getCount());
+                }
+            }
+
+            return null;
         }
 
     }
