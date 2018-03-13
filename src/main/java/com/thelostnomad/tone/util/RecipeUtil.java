@@ -19,6 +19,8 @@ public class RecipeUtil {
 
     private static List<IRecipe> recipesLoaded;
 
+    private static final int HARD_DEPTH_LIMIT = 10;
+
     public static void loadRecipes() {
         Set<ResourceLocation> iterator = CraftingManager.REGISTRY.getKeys();
         recipesLoaded = new ArrayList<IRecipe>();
@@ -42,6 +44,7 @@ public class RecipeUtil {
                     possibleRecipes.add(rec);
                 }
             }
+
         }
         return possibleRecipes;
     }
@@ -68,7 +71,7 @@ public class RecipeUtil {
         return toReturn;
     }
 
-    public static CraftingOperation getRequiredItemsToMakeIfPossible(Object target, List<ItemStack> alreadyHave){
+    public static com.thelostnomad.tone.util.CraftingOperation getRequiredItemsToMakeIfPossible(Object target, List<ItemStack> alreadyHave){
         Map<String, Integer> ah = new HashMap<String, Integer>();
         for(ItemStack is : alreadyHave){
             ComparableItem ci = new ComparableItem(is.getItem());
@@ -83,7 +86,7 @@ public class RecipeUtil {
 
     // Will try to return a list of items needed to create this target item.
     // Will fail and return null if it is not possible to make this item right now.
-    private static CraftingOperation getRequiredItemsToMakeIfPossible(Object target, Map<String, Integer> alreadyHave){
+    private static com.thelostnomad.tone.util.CraftingOperation getRequiredItemsToMakeIfPossible(Object target, Map<String, Integer> alreadyHave){
         RecipeBranch baseBranch = new RecipeBranch(null, target, 0, 1); // Target is the final item. Do we have all of its base branches?
 
         if(!canCraft(new HashMap<String, Integer>(alreadyHave), baseBranch)){
@@ -94,7 +97,7 @@ public class RecipeUtil {
         // We definitely can make the item, but can we formalize it into a set of individual crafting components?
         // What if we reverse the lists? Hmmm.
 
-        CraftingOperation calculatedSteps = formalize(new HashMap<String, Integer>(alreadyHave), baseBranch);
+        com.thelostnomad.tone.util.CraftingOperation calculatedSteps = formalize(new HashMap<String, Integer>(alreadyHave), baseBranch);
         calculatedSteps.reverse();
         calculatedSteps.addStep(new ComparableItem(target));
 
@@ -103,8 +106,8 @@ public class RecipeUtil {
         return calculatedSteps;
     }
 
-    private static CraftingOperation formalize(Map<String, Integer> alreadyHave, RecipeBranch branch){
-        CraftingOperation co = new CraftingOperation();
+    private static com.thelostnomad.tone.util.CraftingOperation formalize(Map<String, Integer> alreadyHave, RecipeBranch branch){
+        com.thelostnomad.tone.util.CraftingOperation co = new com.thelostnomad.tone.util.CraftingOperation();
         for(RecipeBranch rb : branch.getSubBranches()){
             if(alreadyHaveContains(alreadyHave, rb.thisTarget, rb.amtMade)){
                 for(int i = 0; i < rb.amtMade; i++){
@@ -226,7 +229,7 @@ public class RecipeUtil {
             thisTarget = new ComparableItem(target);
             this.amtMade = amtMade;
             List<IRecipe> ingredients = getRecipe(target);
-            if(ingredients.size() == 0 || depth > 6){
+            if(ingredients.size() == 0 || depth > HARD_DEPTH_LIMIT){
                 isEmpty = true;
                 return;
             }

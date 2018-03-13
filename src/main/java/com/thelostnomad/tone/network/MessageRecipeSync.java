@@ -1,12 +1,12 @@
 package com.thelostnomad.tone.network;
 
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.container.ContainerLivingCraftingStation;
 import com.thelostnomad.tone.block.tileentity.TELivingCraftingStation;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
-import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -64,7 +64,7 @@ public class MessageRecipeSync implements IMessage {
                 TELivingCraftingStation tileEntity = con.lcs;
 
                 // Empty grid into inventory
-                con.clearGrid(player);
+                //con.clearGrid(player);
 
                 // They have sent us a recipe they want to make.
                 // Can we make/create it?
@@ -99,13 +99,19 @@ public class MessageRecipeSync implements IMessage {
 
                             ItemStack retreived = core.getFirstItemstackFromInventoryMatching(Arrays.asList(this.recipe[i]));
                             if(retreived == null){
+                                ThingsOfNaturalEnergies.logger.error("We have to try to make " + this.recipe[i][0].getUnlocalizedName());
                                 // Can we maybe make it craft the thing?
                                 boolean result = core.autocraftIfPossible(Arrays.asList(this.recipe[i]));
                                 if(result){
+                                    ThingsOfNaturalEnergies.logger.error("We made " + this.recipe[i][0].getUnlocalizedName());
                                     retreived = core.getFirstItemstackFromInventoryMatching(Arrays.asList(this.recipe[i]));
                                 }else{
+                                    ThingsOfNaturalEnergies.logger.error("Adding alert!" + this.recipe[i][0].getUnlocalizedName());
+
                                     alerts.add("Cannot find/craft " + this.recipe[i][0].getUnlocalizedName());
                                 }
+                            }else{
+                                ThingsOfNaturalEnergies.logger.error("We already have " + this.recipe[i][0].getUnlocalizedName());
                             }
                             if (retreived != null) {
                                 slot.putStack(retreived);

@@ -2,7 +2,6 @@ package com.thelostnomad.tone.block.tileentity;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.util.TreeUtil;
-import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ItemStackHelper;
@@ -13,7 +12,7 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 
 // Much of the inspiration for this particular class comes from the TileBench class of Vanhal's
-// Just another Crafting Bench mod. While I did modify it significantly, his mod is released under the
+// Just another crafting Bench mod. While I did modify it significantly, his mod is released under the
 // COFH don't be a jerk license.
 
 /*

@@ -1,7 +1,5 @@
 package com.thelostnomad.tone.block.tileentity;
 
-import java.util.HashMap;
-
 import com.google.common.base.Predicate;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.BlockPuller;
@@ -12,10 +10,7 @@ import com.thelostnomad.tone.block.berries.HastoBerry;
 import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.item.tokens.ItemToken;
 import com.thelostnomad.tone.registry.ModItems;
-import com.thelostnomad.tone.util.CraftingOperation;
-import com.thelostnomad.tone.util.LifeUtil;
-import com.thelostnomad.tone.util.RecipeUtil;
-import com.thelostnomad.tone.util.TreeUtil;
+import com.thelostnomad.tone.util.*;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.SoundEvents;
@@ -26,7 +21,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.nbt.*;
-import com.thelostnomad.tone.util.MobUtil;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -36,12 +30,15 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraftforge.fluids.*;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import scala.actors.threadpool.Arrays;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +62,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     private Integer glutoCount = 0;
     private Integer funcoCount = 0;
-    private Integer craftoCount = 30; // TODO implement later.
+    private Integer craftoCount = 80; // TODO implement later.
     private Integer rezzoCount = 0;
 
     // For rezzoberry
@@ -900,17 +897,19 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     // Will simply autocraft the item into a storage hollow
-    public boolean autocraftIfPossible(List<ItemStack> possibilities){
+    public synchronized boolean autocraftIfPossible(List<ItemStack> possibilities){
         List<ItemStack> alreadyHave = allItemsInStorage();
         for(ItemStack is : possibilities) {
             CraftingOperation co = RecipeUtil.getRequiredItemsToMakeIfPossible(is.getItem(), alreadyHave);
             if (co == null) {
-                return false; // There's no way to reach it.
+                continue;
             }
             if (craftoCount >= co.getComplexity()) {
                 // If we get here, we *can* craft this item, theoretically.
                 // So, let's do it.
                 for (Map.Entry<Integer, RecipeUtil.ComparableItem> step : co.getSteps().entrySet()) {
+                    List<IRecipe> thisStepOptions = RecipeUtil.getRecipe(step.getValue().getObject());
+                    if(thisStepOptions.size() == 0) continue;
                     IRecipe recipe = RecipeUtil.getRecipe(step.getValue().getObject()).get(0);
                     for (Ingredient i : recipe.getIngredients()) {
                         for (ItemStack stack : i.getMatchingStacks()) {
