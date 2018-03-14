@@ -154,7 +154,6 @@ public class CraftTreeBuilder {
 
     private static boolean canCraft(InventoryWrapper inventory, RecipeBranch branch){
         boolean totalApprox = true;
-        ThingsOfNaturalEnergies.logger.error("This branch focus: " + branch.target.getDisplayName());
         for(RecipeBranch rb : branch.getSubBranches()){
             // For each one, do we have that item? If not, return
             ItemStack targetGoal = rb.target.copy();
@@ -220,6 +219,7 @@ public class CraftTreeBuilder {
                         EquivalenceStack template = getEquivalenceStack(s);
                         EquivalenceStack toAdd = template.copy();
                         toAdd.setAmount(s, s.getCount());
+
                         equivalenceStacks.add(toAdd);
                     }
                 }
@@ -227,6 +227,20 @@ public class CraftTreeBuilder {
                 // This is a normal item
                 standardStacks.add(s);
             }
+        }
+
+        @Override
+        public String toString() {
+            String inv = "Inventory Contents:\n";
+            for(ItemStack is : standardStacks){
+                inv += is.getDisplayName() + "\n";
+            }
+
+            for(EquivalenceStack es : equivalenceStacks){
+                inv += es.toString();
+            }
+
+            return inv;
         }
 
         public boolean hasItemstack(ItemStack stack){
@@ -239,7 +253,6 @@ public class CraftTreeBuilder {
             }
 
             for(EquivalenceStack es : equivalenceStacks){
-                ThingsOfNaturalEnergies.logger.error("Going through equi stack");
                 if(es.hasAmount(stack, stack.getCount())){
                     return true;
                 }
@@ -250,7 +263,7 @@ public class CraftTreeBuilder {
 
         public ItemStack getItemstack(ItemStack stack){
             for(ItemStack is : standardStacks){
-                if(is.isItemEqual(stack)){
+                if(StackUtil.stacksEqual(is, stack)){
                     if(is.getCount() > stack.getCount()){
                         // This is a valid item
                         return is.splitStack(stack.getCount());
@@ -285,13 +298,15 @@ public class CraftTreeBuilder {
             this.amtMade = amtMade;
 
             List<IRecipe> ingredients = getRecipe(target);
-            IRecipe recipe = ingredients.get(0);
+
             // If there is no recipe for this and/or we're at our depth limit
             // mark this branch as a terminal
             if(ingredients.size() == 0 || depth > DEPTH_LIMIT){
                 terminal = true;
                 return;
             }
+
+            IRecipe recipe = ingredients.get(0);
 
             if(isContainedInEquivalenceStack(target)){
                 this.equiStack = getEquivalenceStack(target);

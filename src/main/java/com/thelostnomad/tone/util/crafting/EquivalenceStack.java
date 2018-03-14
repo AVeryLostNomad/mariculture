@@ -1,5 +1,6 @@
 package com.thelostnomad.tone.util.crafting;
 
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
@@ -33,7 +34,14 @@ public class EquivalenceStack {
     }
 
     public void setAmount(ItemStack type, int newAmount){
-        amountsByType.put(templateStack(type), newAmount);
+        ItemStack toChoose = null;
+        for(Map.Entry<ItemStack, Integer> e : amountsByType.entrySet()){
+            if(StackUtil.stacksEqual(e.getKey(), type)){
+                toChoose = e.getKey();
+            }
+        }
+        if(toChoose == null) return;
+        amountsByType.put(toChoose, newAmount);
     }
 
     public boolean hasAmount(ItemStack requested, int amount){
@@ -45,15 +53,16 @@ public class EquivalenceStack {
 
         // Can we convert to it?
         for(Map.Entry<ItemStack, ArrayList<ConversionSpec>> e : conversions.entrySet()){
-            if(StackUtil.stacksEqual(e.getKey(), requested)) continue; // We would have caught this if we could.
+            if(!StackUtil.stacksEqual(e.getKey(), requested)) continue; // We would have caught this if we could.
 
             for(ConversionSpec cs : e.getValue()){
-                if(cs.convertingTo.equals(requested)){
+                if(StackUtil.stacksEqual(cs.convertingTo, requested)){
                     // This is a conversion spec to the target value.
                     int neededConversions = (int) Math.ceil((double) amount / (double) cs.amtToMake);
                     int neededMaterials = cs.amtToTake * neededConversions;
+                    int amtHave = getAmountInInv(cs.from);
 
-                    if(amountsByType.get(e.getKey()) >= neededMaterials){
+                    if(amtHave >= neededMaterials){
                         // We have enough to convert to make this item
                         return true;
                     }
@@ -215,7 +224,7 @@ public class EquivalenceStack {
             if(StackUtil.stacksEqual(requested, e.getKey())) continue; // We would have caught this if we could.
 
             for(ConversionSpec cs : e.getValue()){
-                if(cs.convertingTo.equals(requested)){
+                if(StackUtil.stacksEqual(cs.convertingTo, requested)){
                     // This is a conversion spec to the target value.
                     int neededConversions = (int) Math.ceil((double) amount / (double) cs.amtToMake);
 
