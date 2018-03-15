@@ -1,6 +1,7 @@
 package com.thelostnomad.tone.util.crafting;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
@@ -28,9 +29,33 @@ public class EquivalenceStack {
 
     public EquivalenceStack copy(){
         EquivalenceStack newStack = new EquivalenceStack();
-        newStack.amountsByType = this.amountsByType;
-        newStack.conversions = this.conversions;
+        newStack.amountsByType = new HashMap<>();
+        for(Map.Entry<ItemStack, Integer> stack : this.amountsByType.entrySet()){
+            newStack.amountsByType.put(stack.getKey().copy(), new Integer(stack.getValue()));
+        }
+        newStack.conversions = new HashMap<>();
+        for(Map.Entry<ItemStack, ArrayList<ConversionSpec>> stack : this.conversions.entrySet()){
+            newStack.conversions.put(stack.getKey().copy(), (ArrayList<ConversionSpec>) stack.getValue().clone());
+        }
         return newStack;
+    }
+
+    public boolean similarType(EquivalenceStack otherStack){
+        for(ItemStack thisKey : conversions.keySet()){
+            boolean found = false;
+            for(ItemStack other : otherStack.conversions.keySet()){
+                if(StackUtil.stacksEqual(thisKey, other)){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) return false;
+        }
+        return true;
+    }
+
+    public Map<ItemStack, Integer> getAmountsByType(){
+        return amountsByType;
     }
 
     public void setAmount(ItemStack type, int newAmount){
@@ -90,12 +115,6 @@ public class EquivalenceStack {
         return -1;
     }
 
-    private ItemStack templateStack(ItemStack in){
-        ItemStack toReturn = in.copy();
-        toReturn.setCount(1);
-        return toReturn;
-    }
-
     // Add a thing to the amountsByType list
     public void addTemplateComponent(ItemStack[] stacks){
         for(ItemStack stack : stacks){
@@ -108,7 +127,7 @@ public class EquivalenceStack {
             }
             if(skip) continue;
 
-            amountsByType.put(templateStack(stack), 0);
+            amountsByType.put(StackUtil.templateStack(stack), 0);
             return;
         }
     }
@@ -200,6 +219,12 @@ public class EquivalenceStack {
         return true;
     }
 
+    public void printContents(){
+        for(Map.Entry<ItemStack, Integer> ez : amountsByType.entrySet()){
+            ThingsOfNaturalEnergies.logger.error(ez.getKey().getDisplayName() + " and amount " + ez.getValue());
+        }
+    }
+
     // This should be the primary means of interacting with
     // equivalence stacks. We remove the thing we want, and conversion
     // logic is handled internally
@@ -209,11 +234,18 @@ public class EquivalenceStack {
     // return null.
     public ItemStack removeAmount(ItemStack requested, int amount){
         // Does this stack equate to the requested item
-        if(!amountsByType.containsKey(templateStack(requested))) return null;
+        if(!contains(requested)) return null;
 
         // Do we already have the perfect amount of this item?
-        if(amountsByType.get(templateStack(requested)) >= amount){
-            amountsByType.put(templateStack(requested), amountsByType.get(templateStack(requested)) - amount);
+        if(getAmountInInv(requested) >= amount){
+            ItemStack toTakeFrom = null;
+            for(Map.Entry<ItemStack, Integer> ez : amountsByType.entrySet()){
+                if(StackUtil.stacksEqual(ez.getKey(), requested)){
+                    toTakeFrom = ez.getKey();
+                    break;
+                }
+            }
+            amountsByType.put(toTakeFrom, getAmountInInv(toTakeFrom) - amount);
             ItemStack toReturn = requested.copy();
             toReturn.setCount(amount);
             return toReturn;
@@ -227,20 +259,43 @@ public class EquivalenceStack {
                 if(StackUtil.stacksEqual(cs.convertingTo, requested)){
                     // This is a conversion spec to the target value.
                     int neededConversions = (int) Math.ceil((double) amount / (double) cs.amtToMake);
+                    int neededMaterials = cs.amtToTake * neededConversions;
+                    int amtHave = getAmountInInv(cs.from);
 
-                    if(amountsByType.get(templateStack(e.getKey())) < (neededConversions * cs.amtToTake)){
-                        continue;
+                    if(amtHave >= neededMaterials){
+                        // We have enough to convert to make this item
+                        ItemStack toTakeFrom = null;
+                        for(Map.Entry<ItemStack, Integer> ez : amountsByType.entrySet()){
+                            if(StackUtil.stacksEqual(ez.getKey(), e.getKey())){
+                                toTakeFrom = ez.getKey();
+                                break;
+                            }
+                        }
+                        ItemStack toAddTo = null;
+                        for(Map.Entry<ItemStack, Integer> ez : amountsByType.entrySet()){
+                            if(StackUtil.stacksEqual(ez.getKey(), cs.convertingTo)){
+                                toAddTo = ez.getKey();
+                                break;
+                            }
+                        }
+                        // A conversion has just happened
+                        amountsByType.put(toTakeFrom, getAmountInInv(toTakeFrom) - neededMaterials);
+                        amountsByType.put(toAddTo, getAmountInInv(toAddTo) + (neededConversions * cs.amtToMake));
                     }
-
-                    amountsByType.put(templateStack(e.getKey()), amountsByType.get(templateStack(e.getKey())) - (neededConversions * cs.amtToTake));
-                    amountsByType.put(templateStack(cs.convertingTo), amountsByType.get(templateStack(cs.convertingTo)) + (neededConversions * cs.amtToMake));
                 }
             }
         }
 
         // Go back through and try to do the thing once more.
-        if(amountsByType.get(templateStack(requested)) >= amount){
-            amountsByType.put(requested, amountsByType.get(templateStack(requested)) - amount);
+        if(getAmountInInv(requested) >= amount){
+            ItemStack toTakeFrom = null;
+            for(Map.Entry<ItemStack, Integer> ez : amountsByType.entrySet()){
+                if(StackUtil.stacksEqual(ez.getKey(), requested)){
+                    toTakeFrom = ez.getKey();
+                    break;
+                }
+            }
+            amountsByType.put(toTakeFrom, getAmountInInv(toTakeFrom) - amount);
             ItemStack toReturn = requested.copy();
             toReturn.setCount(amount);
             return toReturn;

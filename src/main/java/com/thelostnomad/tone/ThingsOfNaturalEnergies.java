@@ -54,11 +54,19 @@ public class ThingsOfNaturalEnergies {
         CraftTreeBuilder.loadRecipes();
 
         List<ItemStack> inv = new ArrayList<ItemStack>();
-        inv.add(new ItemStack(Items.REEDS, 27));
+        inv.add(new ItemStack(Items.REEDS, 9));
         inv.add(new ItemStack(Blocks.REDSTONE_BLOCK, 2));
         inv.add(new ItemStack(Blocks.IRON_BLOCK, 2));
+        inv.add(new ItemStack(Blocks.OBSIDIAN, 5));
+        inv.add(new ItemStack(Blocks.DIAMOND_BLOCK, 2));
+        inv.add(new ItemStack(Items.LEATHER, 4));
 
-        CraftTreeBuilder.findProcessToMake(new ItemStack(Items.MAP, 1), inv);
+        List<CraftTreeBuilder.DirectionalItemStack> dir = CraftTreeBuilder.findProcessToMake(new ItemStack(Items.PAPER, 8), inv);
+        if(dir != null){
+            for(CraftTreeBuilder.DirectionalItemStack d : dir){
+                ThingsOfNaturalEnergies.logger.error(d.getStack().getDisplayName() + (d.isAdd() ? " +":" -") + d.getStack().getCount());
+            }
+        }
         FMLCommonHandler.instance().exitJava(0, true);
 //
 //        List<ItemStack> alreadyHave = new ArrayList<ItemStack>(Arrays.asList(new ItemStack[]{

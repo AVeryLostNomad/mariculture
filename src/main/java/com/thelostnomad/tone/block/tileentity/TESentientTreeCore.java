@@ -11,11 +11,14 @@ import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.item.tokens.ItemToken;
 import com.thelostnomad.tone.registry.ModItems;
 import com.thelostnomad.tone.util.*;
+import com.thelostnomad.tone.util.crafting.CraftTreeBuilder;
+import com.thelostnomad.tone.util.crafting.StackUtil;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
+import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
@@ -429,27 +432,25 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return false;
     }
 
-    public ItemStack getFirstItemstackFromInventoryMatching(List<ItemStack> anyOfThese) {
+    public ItemStack getFirstItemstackFromInventoryMatching(ItemStack toGet) {
         for (BlockPos bp : this.storageHollows) {
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             int i = 0;
-            for(ItemStack stack : teStorageHollow.getItemStacks()){
-                for(ItemStack toMatch : anyOfThese){
-                    if(stack.isItemEqual(toMatch)){
-                        // We're good here. We can pull out, if *and only if* we have enough quantity.
-                        if(stack.getCount() >= toMatch.getCount()){
-                            // This is the proper item!
-                            ItemStack toReturn = stack.splitStack(toMatch.getCount());
+            for (ItemStack stack : teStorageHollow.getItemStacks()) {
+                if (StackUtil.stacksEqual(toGet, stack)) {
+                    // We're good here. We can pull out, if *and only if* we have enough quantity.
+                    if (stack.getCount() >= toGet.getCount()) {
+                        // This is the proper item!
+                        ItemStack toReturn = stack.splitStack(toGet.getCount());
 
-                            if(stack.getCount() == 0){
-                                teStorageHollow.setInventorySlotContents(i, ItemStack.EMPTY);
-                            }
-
-                            return toReturn;
+                        if (stack.getCount() == 0) {
+                            teStorageHollow.setInventorySlotContents(i, ItemStack.EMPTY);
                         }
+
+                        return toReturn;
                     }
                 }
-                i ++;
+                i++;
             }
         }
         return null;
@@ -842,7 +843,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
                 if (!stack.isEmpty()) {
-                    toReturn.add(stack);
+                    toReturn.add(stack.copy());
                 }
             }
         }
@@ -896,32 +897,44 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return itemWasPushed;
     }
 
-    // Will simply autocraft the item into a storage hollow
-    public synchronized boolean autocraftIfPossible(List<ItemStack> possibilities){
+    public synchronized List<ItemStack> getMissingItemsToCraft(ItemStack goal) {
         List<ItemStack> alreadyHave = allItemsInStorage();
-        for(ItemStack is : possibilities) {
-            CraftingOperation co = RecipeUtil.getRequiredItemsToMakeIfPossible(is.getItem(), alreadyHave);
-            if (co == null) {
+        List<CraftTreeBuilder.DirectionalItemStack> directionalItemStacks = CraftTreeBuilder.findProcessToMake(goal, alreadyHave);
+
+        if (directionalItemStacks == null) {
+            List<ItemStack> missing = CraftTreeBuilder.findMissingItems(goal, alreadyHave);
+            return missing;
+        }
+        return new ArrayList<>();
+    }
+
+    // Will simply autocraft the item into a storage hollow
+    public synchronized boolean autocraftIfPossible(List<ItemStack> possibilities) {
+        List<ItemStack> alreadyHave = allItemsInStorage();
+        for (ItemStack is : possibilities) {
+            List<CraftTreeBuilder.DirectionalItemStack> directionalItemStacks = CraftTreeBuilder.findProcessToMake(is, alreadyHave);
+
+            if (directionalItemStacks == null) {
+                List<ItemStack> missing = CraftTreeBuilder.findMissingItems(is, alreadyHave);
+                for (ItemStack ls : missing) {
+                    ThingsOfNaturalEnergies.logger.error("Missing: " + ls.getDisplayName() + " x " + ls.getCount());
+                }
                 continue;
             }
-            if (craftoCount >= co.getComplexity()) {
-                // If we get here, we *can* craft this item, theoretically.
-                // So, let's do it.
-                for (Map.Entry<Integer, RecipeUtil.ComparableItem> step : co.getSteps().entrySet()) {
-                    List<IRecipe> thisStepOptions = RecipeUtil.getRecipe(step.getValue().getObject());
-                    if(thisStepOptions.size() == 0) continue;
-                    IRecipe recipe = RecipeUtil.getRecipe(step.getValue().getObject()).get(0);
-                    for (Ingredient i : recipe.getIngredients()) {
-                        for (ItemStack stack : i.getMatchingStacks()) {
-                            if (tryRemoveItemFromInventory(stack) != null)
-                                break;
-                        }
-                    }
-                    // Now that we've removed the necessary ingredients, let's pop out the output.
-                    storeItemInFirstOpenSlot(recipe.getRecipeOutput());
+
+            // It was done. Include craftoberries here, please.
+            for (CraftTreeBuilder.DirectionalItemStack dir : directionalItemStacks) {
+                if (dir.isAdd()) {
+                    // Add an item to this block
+                    storeItemInFirstOpenSlot(dir.getStack());
+                } else {
+                    tryRemoveItemFromInventory(dir.getStack());
                 }
-                return true;
             }
+            ItemStack result = is.copy();
+            storeItemInFirstOpenSlot(result);
+            alreadyHave = allItemsInStorage();
+            return true;
         }
         return false;
     }
@@ -932,9 +945,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             if (!(is.getItem() instanceof ItemToken) && !itemContainedInStorage(is)) {
                 // It's not a token, so we can try to craft it!
                 boolean result = autocraftIfPossible(Arrays.asList(new ItemStack[]{is}));
-                if(result){
+                if (result) {
                     count++;
-                    if(count == amtToPull){
+                    if (count == amtToPull) {
                         break;
                     }
                 }
@@ -948,7 +961,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
                 if (!stack.isEmpty()) {
-                    if (!stack.isItemEqual(stackToRemove)) {
+                    if (!StackUtil.stacksEqual(stack, stackToRemove)) {
                         continue;
                     }
                     ItemStack second = storageHollow.decrStackSize(i, stackToRemove.getCount());
@@ -1097,9 +1110,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             if (!worked) {
                 ThingsOfNaturalEnergies.logger.error("But we can't steal that liquid");
                 return false;
-            }else{
+            } else {
                 // It did work
-                handler.fill(new FluidStack(f, amtToPush-count), true);
+                handler.fill(new FluidStack(f, amtToPush - count), true);
             }
             ThingsOfNaturalEnergies.logger.error("And we can remove that liquid");
             doRemoveAllLiquid(f, (long) amtToPush - count);

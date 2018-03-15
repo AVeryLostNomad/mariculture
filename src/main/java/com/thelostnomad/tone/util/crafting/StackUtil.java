@@ -12,4 +12,10 @@ public class StackUtil {
         return ItemStack.areItemStacksEqual(one, two);
     }
 
+    public static ItemStack templateStack(ItemStack in){
+        ItemStack toReturn = in.copy();
+        toReturn.setCount(1);
+        return toReturn;
+    }
+
 }

@@ -4,6 +4,7 @@ import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.container.ContainerLivingCraftingStation;
 import com.thelostnomad.tone.block.tileentity.TELivingCraftingStation;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
+import com.thelostnomad.tone.util.crafting.StackUtil;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
@@ -90,6 +91,7 @@ public class MessageRecipeSync implements IMessage {
                     }
                 }
                 List<String> alerts = new ArrayList<String>();
+                List<ItemStack> missing = new ArrayList<ItemStack>();
                 for (int i = 0; i < this.recipe.length; i++) {
                     if (this.recipe[i] != null && this.recipe[i].length > 0) {
                         Slot slot = con.getSlotFromInventory(con.craftMatrix, i);
@@ -97,29 +99,31 @@ public class MessageRecipeSync implements IMessage {
                             // We need to fit an item here:
                             TESentientTreeCore core = (TESentientTreeCore) tileEntity.getWorld().getTileEntity(tileEntity.getCoreLocation());
 
-                            ItemStack retreived = core.getFirstItemstackFromInventoryMatching(Arrays.asList(this.recipe[i]));
+                            ItemStack retreived = core.getFirstItemstackFromInventoryMatching(this.recipe[i][0]);
                             if(retreived == null){
-                                ThingsOfNaturalEnergies.logger.error("We have to try to make " + this.recipe[i][0].getUnlocalizedName());
                                 // Can we maybe make it craft the thing?
-                                boolean result = core.autocraftIfPossible(Arrays.asList(this.recipe[i]));
-                                if(result){
-                                    ThingsOfNaturalEnergies.logger.error("We made " + this.recipe[i][0].getUnlocalizedName());
-                                    retreived = core.getFirstItemstackFromInventoryMatching(Arrays.asList(this.recipe[i]));
-                                }else{
-                                    ThingsOfNaturalEnergies.logger.error("Adding alert!" + this.recipe[i][0].getUnlocalizedName());
-
-                                    alerts.add("Cannot find/craft " + this.recipe[i][0].getUnlocalizedName());
+                                List<ItemStack> result = core.getMissingItemsToCraft(this.recipe[i][0]);
+                                if(result != null){
+                                    // We are missing something
+                                    for(ItemStack s : result){
+                                        boolean found = false;
+                                        for(ItemStack m : missing){
+                                            if(StackUtil.stacksEqual(s, m)){
+                                                m.setCount(m.getCount() + s.getCount());
+                                            }
+                                        }
+                                        if(!found){
+                                            missing.add(s);
+                                        }
+                                    }
                                 }
-                            }else{
-                                ThingsOfNaturalEnergies.logger.error("We already have " + this.recipe[i][0].getUnlocalizedName());
-                            }
-                            if (retreived != null) {
-                                slot.putStack(retreived);
                             }
                         }
                     }
                 }
-
+                for(ItemStack is : missing){
+                    ThingsOfNaturalEnergies.logger.error(is.getDisplayName() + " x " + is.getCount());
+                }
                 // reply with a crafting matrix sync message
                 TonePacketHandler.sendTo(new MessageCraftingSync(con.craftMatrix, alerts), player);
             }
