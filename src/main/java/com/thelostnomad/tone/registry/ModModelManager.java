@@ -1,6 +1,8 @@
 package com.thelostnomad.tone.registry;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.integration.IToneIntegration;
+import com.thelostnomad.tone.proxy.CommonProxy;
 import com.thelostnomad.tone.util.IVariant;
 import net.minecraft.block.Block;
 import net.minecraft.block.properties.IProperty;
@@ -124,9 +126,18 @@ public class ModModelManager {
         registerBlockItemModel(
                 ModBlocks.sentientSapling.getDefaultState()
         );
+//        registerBlockItemModel(
+//                ModBlocks.transmutationGas.getDefaultState()
+//        );
         registerBlockItemModel(
-                ModBlocks.transmutationGas.getDefaultState()
+                ModBlocks.livingCraftingStation.getDefaultState()
         );
+
+        for(IToneIntegration iti : CommonProxy.toneIntegrations){
+            for(IBlockState ibs : iti.getModelBlockStates()){
+                registerBlockItemModel(ibs);
+            }
+        }
     }
 
     private final StateMapperBase propertyStringMapper = new StateMapperBase() {

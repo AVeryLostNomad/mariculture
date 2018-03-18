@@ -1,7 +1,5 @@
-package com.thelostnomad.tone.integration;
+package com.thelostnomad.tone.integration.jei;
 
-import com.thelostnomad.tone.ThingsOfNaturalEnergies;
-import com.thelostnomad.tone.block.container.ContainerLivingCraftingStation;
 import mezz.jei.api.*;
 import mezz.jei.api.recipe.VanillaRecipeCategoryUid;
 import mezz.jei.api.recipe.transfer.IRecipeTransferRegistry;
@@ -9,15 +7,18 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferRegistry;
 @JEIPlugin
 public class ToneJEIIntegration implements IModPlugin {
 
-    static IIngredientListOverlay jeiOverlay;
-    static IJeiHelpers jeiHelpers;
+    public static IIngredientListOverlay jeiOverlay;
+    public static IJeiHelpers jeiHelpers;
+    public static IGuiHelper guiHelper;
 
     @Override
     public void register(IModRegistry registry) {
         jeiHelpers = registry.getJeiHelpers();
-        IRecipeTransferRegistry recipeTransferRegistry = registry.getRecipeTransferRegistry();
+        guiHelper = jeiHelpers.getGuiHelper();
 
+        IRecipeTransferRegistry recipeTransferRegistry = registry.getRecipeTransferRegistry();
         recipeTransferRegistry.addRecipeTransferHandler(new LivingCraftingRecipeTransferHandler(), VanillaRecipeCategoryUid.CRAFTING);
+        registry.addAdvancedGuiHandlers(new MoveOutDaWayJEI());
     }
 
 }

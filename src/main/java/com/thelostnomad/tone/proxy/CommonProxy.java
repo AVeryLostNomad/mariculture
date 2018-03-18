@@ -10,10 +10,9 @@ import com.thelostnomad.tone.block.fluid.BlockTransmutationGas;
 import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
 import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
 import com.thelostnomad.tone.block.tileentity.*;
-import com.thelostnomad.tone.registry.ModBlocks;
-import com.thelostnomad.tone.registry.ModFluids;
-import com.thelostnomad.tone.registry.ModGuiHandler;
-import com.thelostnomad.tone.registry.ModItems;
+import com.thelostnomad.tone.integration.IToneIntegration;
+import com.thelostnomad.tone.integration.ae2.ToneAE2;
+import com.thelostnomad.tone.registry.*;
 import com.thelostnomad.tone.util.ChatUtil;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockTrapDoor;
@@ -32,6 +31,7 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.BlockEvent;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
@@ -48,6 +48,10 @@ public class CommonProxy {
 
     public static ItemBlock sentientLog;
 
+    public static IToneIntegration[] toneIntegrations = new IToneIntegration[]{
+            new ToneAE2()
+    };
+
     /** Gets the client player clientside, or null serverside */
     public EntityPlayer getClientPlayer() {
         return null;
@@ -62,10 +66,16 @@ public class CommonProxy {
         GameRegistry.registerTileEntity(TEPusher.class, TEPusher.NAME);
         GameRegistry.registerTileEntity(TELivingCraftingStation.class, TELivingCraftingStation.NAME);
 
+        for(IToneIntegration integration : toneIntegrations){
+            if(Loader.isModLoaded(integration.getIntegrationModid())){
+                integration.registerTileEntities();
+            }
+        }
 
         NetworkRegistry.INSTANCE.registerGuiHandler(ThingsOfNaturalEnergies.instance, ModGuiHandler.getInstance());
         ModFluids.registerFluids();
 
+        ModEntities.init();
 
 //        blockSimple = (BlockSimple)(new BlockSimple().setUnlocalizedName("mbe01_block_simple_unlocalised_name"));
 //        blockSimple.setRegistryName("mbe01_block_simple_registry_name");
@@ -94,7 +104,7 @@ public class CommonProxy {
         event.getRegistry().register(new SentientLeaves());
         event.getRegistry().register(new BlockPuller());
         event.getRegistry().register(new BlockPusher());
-        event.getRegistry().register(new BlockTransmutationGas());
+//        event.getRegistry().register(new BlockTransmutationGas());
         event.getRegistry().register(new BlockLivingCraftingStation());
 
         //Berries
@@ -102,6 +112,12 @@ public class CommonProxy {
         event.getRegistry().register(new GlutoBerry());
         event.getRegistry().register(new FuncoBerry());
         event.getRegistry().register(new RezzoBerry());
+
+        for(IToneIntegration integration : toneIntegrations){
+            if(Loader.isModLoaded(integration.getIntegrationModid())){
+                integration.registerBlocks(event);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -119,7 +135,7 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.glutoBerry).setRegistryName(ModBlocks.glutoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.funcoBerry).setRegistryName(ModBlocks.funcoBerry.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.rezzoBerry).setRegistryName(ModBlocks.rezzoBerry.getRegistryName()));
-        event.getRegistry().register(new ItemBlock(ModBlocks.transmutationGas).setRegistryName(ModBlocks.transmutationGas.getRegistryName()));
+//        event.getRegistry().register(new ItemBlock(ModBlocks.transmutationGas).setRegistryName(ModBlocks.transmutationGas.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.livingCraftingStation).setRegistryName(ModBlocks.livingCraftingStation.getRegistryName()));
 
         event.getRegistry().register(ModItems.tokenPullAll);
@@ -128,6 +144,12 @@ public class CommonProxy {
         event.getRegistry().register(ModItems.funcoBerryItem);
         event.getRegistry().register(ModItems.rezzoBerryItem);
         event.getRegistry().register(ModItems.shardOfSentience);
+
+        for(IToneIntegration integration : toneIntegrations){
+            if(Loader.isModLoaded(integration.getIntegrationModid())){
+                integration.registerItems(event);
+            }
+        }
     }
 
     @SubscribeEvent

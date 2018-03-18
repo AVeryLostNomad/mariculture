@@ -15,13 +15,13 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +33,12 @@ public class BlockLivingCraftingStation extends BlockContainer implements ITree 
         setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".living_crafting_station");
         setRegistryName("living_crafting_station");
         setCreativeTab(ThingsOfNaturalEnergies.creativeTab);
+    }
+
+    @Override
+    public boolean hasTileEntity(IBlockState state)
+    {
+        return true;
     }
 
     @Override
@@ -73,5 +79,16 @@ public class BlockLivingCraftingStation extends BlockContainer implements ITree 
             TELivingCraftingStation thisPuller = (TELivingCraftingStation) worldIn.getTileEntity(pos);
             thisPuller.setCoreLocation(core);
         }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public BlockRenderLayer getBlockLayer()
+    {
+        return BlockRenderLayer.SOLID;
+    }
+
+    @Override
+    public EnumBlockRenderType getRenderType(IBlockState iBlockState) {
+        return EnumBlockRenderType.MODEL;
     }
 }

@@ -61,11 +61,7 @@ public class ModBlocks {
         BlockBerry[] toCheck = new BlockBerry[]{hastoBerry, glutoBerry, funcoBerry};
 
         for(BlockBerry berry : toCheck){
-            if(berry instanceof GlutoBerry){
-                ThingsOfNaturalEnergies.logger.error("Checking gluto");
-            }
             for(Biome biome : berry.getThrivesIn()){
-                ThingsOfNaturalEnergies.logger.error("Biome: " + biome.getBiomeName() + " and " + b.getBiomeName());
                 if (biome.getBiomeName().equals(b.getBiomeName())){
                     return berry;
                 }

@@ -1,4 +1,4 @@
-package com.thelostnomad.tone.integration;
+package com.thelostnomad.tone.integration.jei;
 
 import java.util.ArrayList;
 import java.util.Collection;

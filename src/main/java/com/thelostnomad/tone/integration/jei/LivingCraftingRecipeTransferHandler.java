@@ -1,6 +1,5 @@
-package com.thelostnomad.tone.integration;
+package com.thelostnomad.tone.integration.jei;
 
-import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.container.ContainerLivingCraftingStation;
 import com.thelostnomad.tone.network.MessageRecipeSync;
 import com.thelostnomad.tone.network.TonePacketHandler;
@@ -10,14 +9,11 @@ import mezz.jei.api.recipe.VanillaRecipeCategoryUid;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.ContainerWorkbench;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
 import java.util.List;

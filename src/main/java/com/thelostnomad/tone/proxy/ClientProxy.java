@@ -1,5 +1,6 @@
 package com.thelostnomad.tone.proxy;
 
+import com.thelostnomad.tone.registry.ModEntities;
 import com.thelostnomad.tone.registry.ModModelManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -13,6 +14,7 @@ public class ClientProxy extends CommonProxy {
     public void preInit(FMLPreInitializationEvent e) {
         super.preInit(e);
         ModModelManager mm = ModModelManager.INSTANCE;
+        ModEntities.initModels();
     }
 
     public EntityPlayer getClientPlayer() {

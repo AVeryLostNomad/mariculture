@@ -68,8 +68,7 @@ public class MessageRecipeSync implements IMessage {
                 //con.clearGrid(player);
 
                 // They have sent us a recipe they want to make.
-                // Can we make/create it?
-                // That is the ultimate question
+
                 this.recipe = new ItemStack[9][];
                 for (int x = 0; x < this.recipe.length; x++) {
                     NBTTagList list = message.recipe.getTagList("#" + x, 10);
@@ -91,38 +90,29 @@ public class MessageRecipeSync implements IMessage {
                     }
                 }
                 List<String> alerts = new ArrayList<String>();
-                List<ItemStack> missing = new ArrayList<ItemStack>();
+
+                TESentientTreeCore core = (TESentientTreeCore) tileEntity.getWorld().getTileEntity(tileEntity.getCoreLocation());
                 for (int i = 0; i < this.recipe.length; i++) {
                     if (this.recipe[i] != null && this.recipe[i].length > 0) {
                         Slot slot = con.getSlotFromInventory(con.craftMatrix, i);
                         if (slot != null) {
                             // We need to fit an item here:
-                            TESentientTreeCore core = (TESentientTreeCore) tileEntity.getWorld().getTileEntity(tileEntity.getCoreLocation());
 
                             ItemStack retreived = core.getFirstItemstackFromInventoryMatching(this.recipe[i][0]);
                             if(retreived == null){
                                 // Can we maybe make it craft the thing?
-                                List<ItemStack> result = core.getMissingItemsToCraft(this.recipe[i][0]);
-                                if(result != null){
-                                    // We are missing something
-                                    for(ItemStack s : result){
-                                        boolean found = false;
-                                        for(ItemStack m : missing){
-                                            if(StackUtil.stacksEqual(s, m)){
-                                                m.setCount(m.getCount() + s.getCount());
-                                            }
-                                        }
-                                        if(!found){
-                                            missing.add(s);
-                                        }
-                                    }
+                                boolean result = core.autocraftIfPossible(Arrays.asList(this.recipe[i]));
+                                if(result){
+                                    retreived = core.getFirstItemstackFromInventoryMatching(this.recipe[i][0]);
                                 }
+                            }
+
+                            // Try to put slot there
+                            if(retreived != null){
+                                slot.putStack(retreived);
                             }
                         }
                     }
-                }
-                for(ItemStack is : missing){
-                    ThingsOfNaturalEnergies.logger.error(is.getDisplayName() + " x " + is.getCount());
                 }
                 // reply with a crafting matrix sync message
                 TonePacketHandler.sendTo(new MessageCraftingSync(con.craftMatrix, alerts), player);

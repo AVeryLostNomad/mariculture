@@ -915,10 +915,6 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             List<CraftTreeBuilder.DirectionalItemStack> directionalItemStacks = CraftTreeBuilder.findProcessToMake(is, alreadyHave);
 
             if (directionalItemStacks == null) {
-                List<ItemStack> missing = CraftTreeBuilder.findMissingItems(is, alreadyHave);
-                for (ItemStack ls : missing) {
-                    ThingsOfNaturalEnergies.logger.error("Missing: " + ls.getDisplayName() + " x " + ls.getCount());
-                }
                 continue;
             }
 

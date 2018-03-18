@@ -1,5 +1,8 @@
 package com.thelostnomad.tone.util;
 
+import appeng.api.networking.IGridConnection;
+import appeng.api.networking.IGridNode;
+import appeng.api.util.IReadOnlyCollection;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.RootBlock;
 import com.thelostnomad.tone.block.SentientLeaves;
@@ -8,6 +11,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public class TreeUtil {

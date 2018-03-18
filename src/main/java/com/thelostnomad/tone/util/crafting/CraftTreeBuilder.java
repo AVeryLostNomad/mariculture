@@ -168,7 +168,7 @@ public class CraftTreeBuilder {
 
         RecipeBranch baseBranch = new RecipeBranch(null, target, 0, 1);
 
-        printAllRecipeBranches(baseBranch);
+        //printAllRecipeBranches(baseBranch);
 
         boolean canDoCraft = canCraft(wrap.copy(), baseBranch);
         if(canDoCraft){
@@ -184,7 +184,6 @@ public class CraftTreeBuilder {
         for(int i = 0; i < branch.depth; i++){
             spaces += " ";
         }
-        ThingsOfNaturalEnergies.logger.error(spaces + branch.target.getDisplayName() + " x " + branch.amtMade);
         for(RecipeBranch rb : branch.getSubBranches()){
             printAllRecipeBranches(rb);
         }
