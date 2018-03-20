@@ -1,7 +1,7 @@
 package com.thelostnomad.tone.block;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
-import com.thelostnomad.tone.util.ITree;
+import com.thelostnomad.tone.util.world.ITree;
 import net.minecraft.block.Block;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;

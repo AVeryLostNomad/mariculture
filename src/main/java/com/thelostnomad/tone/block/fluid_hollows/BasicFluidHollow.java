@@ -4,7 +4,7 @@ import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TEFluidHollow;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.util.ChatUtil;
-import com.thelostnomad.tone.util.ITree;
+import com.thelostnomad.tone.util.world.ITree;
 import com.thelostnomad.tone.util.TreeUtil;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;

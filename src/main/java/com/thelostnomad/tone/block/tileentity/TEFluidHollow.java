@@ -1,5 +1,6 @@
 package com.thelostnomad.tone.block.tileentity;
 
+import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
@@ -12,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TEFluidHollow extends TileEntity {
+public class TEFluidHollow extends TileEntity implements IInteractable {
 
     public static final String NAME = "tone_fluidhollow_tileentity";
     private BlockPos coreLocation = null;
@@ -142,6 +143,11 @@ public class TEFluidHollow extends TileEntity {
             Fluid f = FluidRegistry.getFluid(fluidName);
             millibucketsByFluid.put(f, amount);
         }
+    }
+
+    @Override
+    public InteractableType getType() {
+        return InteractableType.FLUID;
     }
 
     // Type of hollow in terms of bucket capacity and name

@@ -14,6 +14,7 @@ import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.util.*;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.integration.IToneInventoryable;
 import com.thelostnomad.tone.network.TonePacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -21,6 +22,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import javax.annotation.Nonnull;
@@ -31,12 +33,13 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
-public class TELivingEnergisticInterface extends TileEntity implements IGridHost, IGridBlock, ITickable, IEnergySource, IActionSource {
+public class TELivingEnergisticInterface extends TileEntity implements IGridHost, IGridBlock, ITickable, IEnergySource, IActionSource, IToneInventoryable {
 
     public static final String NAME = "tone_ae2_livingenergisticinterface";
 
     IGridNode node = null;
     boolean initialized = false;
+    private BlockPos coreLocation = null;
 
     private EntityPlayer placingPlayer = null;
 
@@ -48,13 +51,41 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
         }
     }
 
-    public ItemStack drawItem(ItemStack i){
+    public void setCoreLocation(BlockPos coreLocation) {
+        this.coreLocation = coreLocation;
+    }
+
+    public BlockPos getCoreLocation() {
+        return coreLocation;
+    }
+
+    public boolean pushItem(ItemStack target){
+        if(node == null){
+            return false;
+        }
+
+        IItemStorageChannel channel = AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class);
+        IAEItemStack iaeItemStack = channel.createStack(target.copy());
+        // Now we've got the item in a stack that we can handle
+        List<IMEInventoryHandler> drives = getDrivesInNetwork();
+        for(IMEInventoryHandler d : drives){
+            if(d.canAccept(iaeItemStack)){
+                d.injectItems(iaeItemStack, Actionable.MODULATE, this);
+                return true;
+            }
+        }
+
+        // If we got here, we couldn't find it.
+        return false;
+    }
+
+    public ItemStack pullItem(ItemStack i){
         if(node == null){
             return null;
         }
 
         IItemStorageChannel channel = AEApi.instance().storage().getStorageChannel(IItemStorageChannel.class);
-        IAEItemStack iaeItemStack = channel.createStack(i);
+        IAEItemStack iaeItemStack = channel.createStack(i.copy());
         // Now we've got the item in a stack that we can handle
         List<IMEInventoryHandler> drives = getDrivesInNetwork();
         for(IMEInventoryHandler d : drives){
@@ -63,6 +94,7 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
                 continue;
             }
             ItemStack stack = resultStack.asItemStackRepresentation();
+            // AN ITEM WAS DRAWN. SEND A NOTIFICATION TO THE SERVER
             return stack;
         }
 
@@ -127,6 +159,14 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
 
         if(node != null) node.saveToNBT("ae_node", parentNBTTagCompound);
 
+        if(coreLocation != null) {
+            NBTTagCompound blockPosNBT = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
+            blockPosNBT.setInteger("x", coreLocation.getX());
+            blockPosNBT.setInteger("y", coreLocation.getY());
+            blockPosNBT.setInteger("z", coreLocation.getZ());
+            parentNBTTagCompound.setTag("coreLocation", blockPosNBT);
+        }
+
         return parentNBTTagCompound;
     }
 
@@ -142,6 +182,13 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
                 node.loadFromNBT("ae_node", parentNBTTagCompound);
             }
         }
+
+        NBTTagCompound coreLoc = parentNBTTagCompound.getCompoundTag("coreLocation");
+        if(coreLoc != null){
+            coreLocation = new BlockPos(coreLoc.getInteger("x"),
+                    coreLoc.getInteger("y"), coreLoc.getInteger("z"));
+        }
+
         initialized = false;
     }
 

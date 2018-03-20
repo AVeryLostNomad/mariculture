@@ -1,17 +1,12 @@
 package com.thelostnomad.tone.block.tileentity;
 
 import com.thelostnomad.tone.registry.ModBlocks;
-import com.thelostnomad.tone.util.ITree;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class TERoomTransmuter extends TileEntity implements ITickable {
 

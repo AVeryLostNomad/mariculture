@@ -7,6 +7,8 @@ import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
+import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 
 public interface IToneIntegration {
 
@@ -17,6 +19,9 @@ public interface IToneIntegration {
     void registerItems(RegistryEvent.Register<Item> event);
 
     void registerTileEntities();
+
+    // returns ending id
+    int registerNetworkMessages(SimpleNetworkWrapper wrapper, int startId);
 
     IBlockState[] getModelBlockStates();
 

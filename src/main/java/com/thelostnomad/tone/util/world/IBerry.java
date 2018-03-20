@@ -1,4 +1,4 @@
-package com.thelostnomad.tone.util;
+package com.thelostnomad.tone.util.world;
 
 import net.minecraft.world.biome.Biome;
 

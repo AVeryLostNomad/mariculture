@@ -1,6 +1,8 @@
 package com.thelostnomad.tone.network;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.integration.IToneIntegration;
+import com.thelostnomad.tone.proxy.CommonProxy;
 import com.thelostnomad.tone.util.ChatUtil;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
@@ -18,6 +20,10 @@ public class TonePacketHandler {
         MSG_INSTANCE.registerMessage(LastRecipeMessage.Handler.class, LastRecipeMessage.class, id++, Side.CLIENT);
         MSG_INSTANCE.registerMessage(MessageRecipeSync.Handler.class, MessageRecipeSync.class, id++, Side.SERVER);
         MSG_INSTANCE.registerMessage(MessageCraftingSync.Handler.class, MessageCraftingSync.class, id++, Side.CLIENT);
+
+        for(IToneIntegration iti : CommonProxy.toneIntegrations){
+            id+=iti.registerNetworkMessages(MSG_INSTANCE, id);
+        }
     }
 
     public static void sendToAllAround(IMessage message, TileEntity te, int range) {

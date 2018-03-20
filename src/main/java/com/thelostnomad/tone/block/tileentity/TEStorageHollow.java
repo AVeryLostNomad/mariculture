@@ -1,6 +1,7 @@
 package com.thelostnomad.tone.block.tileentity;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -18,7 +19,7 @@ import net.minecraft.world.World;
 
 import java.util.Arrays;
 
-public class TEStorageHollow extends TileEntity implements IInventory {
+public class TEStorageHollow extends TileEntity implements IInventory, IInteractable {
 
     public static final String NAME = "tone_storagehollow_tileentity";
     private BlockPos coreLocation = null;
@@ -304,6 +305,11 @@ public class TEStorageHollow extends TileEntity implements IInventory {
     @Override
     public ITextComponent getDisplayName() {
         return this.hasCustomName() ? new TextComponentString(this.getName()) : new TextComponentTranslation(this.getName());
+    }
+
+    @Override
+    public InteractableType getType() {
+        return InteractableType.STORAGE;
     }
 
 //    @Override

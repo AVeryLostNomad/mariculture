@@ -1,5 +1,6 @@
 package com.thelostnomad.tone.block.tileentity;
 
+import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
@@ -10,7 +11,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.Arrays;
 
-public class TEPusher  extends TileEntity implements IInventory {
+public class TEPusher  extends TileEntity implements IInventory, IInteractable {
 
     public static final String NAME = "tone_pusher_tileentity";
     private BlockPos coreLocation = null;
@@ -219,5 +220,10 @@ public class TEPusher  extends TileEntity implements IInventory {
     @Override
     public boolean hasCustomName() {
         return false;
+    }
+
+    @Override
+    public InteractableType getType() {
+        return InteractableType.PUSHER;
     }
 }

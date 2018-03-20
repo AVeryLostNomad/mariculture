@@ -6,7 +6,7 @@ import com.thelostnomad.tone.block.tileentity.TEPusher;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.registry.ModGuiHandler;
 import com.thelostnomad.tone.util.ChatUtil;
-import com.thelostnomad.tone.util.ITree;
+import com.thelostnomad.tone.util.world.ITree;
 import com.thelostnomad.tone.util.TreeUtil;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
@@ -108,7 +108,6 @@ public class BlockPusher extends BlockContainer implements ITree {
     }
 
     public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {
-        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
 
         BlockPos core = TreeUtil.findCore(worldIn, pos);
         if (core == null) {
@@ -126,6 +125,7 @@ public class BlockPusher extends BlockContainer implements ITree {
             worldIn.setBlockToAir(pos);
             return;
         }
+        super.onBlockPlacedBy(worldIn, pos, state, placer, stack);
 
         TileEntity tileentity = worldIn.getTileEntity(core);
         if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null

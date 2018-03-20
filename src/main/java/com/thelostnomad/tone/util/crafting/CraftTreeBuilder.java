@@ -1,14 +1,11 @@
 package com.thelostnomad.tone.util.crafting;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
-import com.thelostnomad.tone.util.RecipeUtil;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.datafix.walkers.ItemStackData;
-import scala.Array;
 
 import java.util.*;
 

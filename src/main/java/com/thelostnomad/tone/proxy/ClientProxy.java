@@ -1,11 +1,14 @@
 package com.thelostnomad.tone.proxy;
 
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.registry.ModEntities;
 import com.thelostnomad.tone.registry.ModModelManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 
 @Mod.EventBusSubscriber(Side.CLIENT)

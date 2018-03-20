@@ -13,6 +13,7 @@ import com.thelostnomad.tone.registry.ModItems;
 import com.thelostnomad.tone.util.*;
 import com.thelostnomad.tone.util.crafting.CraftTreeBuilder;
 import com.thelostnomad.tone.util.crafting.StackUtil;
+import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.SoundEvents;
@@ -50,14 +51,11 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     // Name of tile entity
     public static final String NAME = "tone_sentienttree_tileentity";
 
-    List<BlockPos> storageHollows = new ArrayList<BlockPos>();
-    List<BlockPos> fluidHollows = new ArrayList<BlockPos>();
-    List<BlockPos> pullers = new ArrayList<>();
-    List<BlockPos> pushers = new ArrayList<>();
-
     List<BlockPos> berries = new ArrayList<>();
 
     List<BlockPos> roots = new ArrayList<>();
+
+    List<BlockPos> interactables = new ArrayList<>();
 
     private long tickcount = 0;
     private Long tickRate = 60L; // For a tree without hastoberries, this is the default. One action cycle every three
@@ -189,44 +187,15 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         parentNBTTagCompound.setTag("lifeContributedSoFar", new NBTTagInt(lifeContributedSoFar));
         parentNBTTagCompound.setTag("lifeNeeded", new NBTTagInt(lifeNeeded));
 
-        NBTTagList shs = new NBTTagList();
-        for (BlockPos b : this.storageHollows) {
+        NBTTagList interactables = new NBTTagList();
+        for (BlockPos b : this.interactables) {
             NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
             thisBlockPos.setInteger("x", b.getX());
             thisBlockPos.setInteger("y", b.getY());
             thisBlockPos.setInteger("z", b.getZ());
-            shs.appendTag(thisBlockPos);
+            interactables.appendTag(thisBlockPos);
         }
-        parentNBTTagCompound.setTag("storageHollows", shs);
-
-        NBTTagList fhs = new NBTTagList();
-        for (BlockPos b : this.fluidHollows) {
-            NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
-            thisBlockPos.setInteger("x", b.getX());
-            thisBlockPos.setInteger("y", b.getY());
-            thisBlockPos.setInteger("z", b.getZ());
-            fhs.appendTag(thisBlockPos);
-        }
-        parentNBTTagCompound.setTag("fluidHollows", fhs);
-
-        NBTTagList pullers = new NBTTagList();
-        for (BlockPos b : this.pullers) {
-            NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
-            thisBlockPos.setInteger("x", b.getX());
-            thisBlockPos.setInteger("y", b.getY());
-            thisBlockPos.setInteger("z", b.getZ());
-            pullers.appendTag(thisBlockPos);
-        }
-        parentNBTTagCompound.setTag("pullers", pullers);
-        NBTTagList pushers = new NBTTagList();
-        for (BlockPos b : this.pushers) {
-            NBTTagCompound thisBlockPos = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
-            thisBlockPos.setInteger("x", b.getX());
-            thisBlockPos.setInteger("y", b.getY());
-            thisBlockPos.setInteger("z", b.getZ());
-            pushers.appendTag(thisBlockPos);
-        }
-        parentNBTTagCompound.setTag("pushers", pushers);
+        parentNBTTagCompound.setTag("interactables", interactables);
 
         NBTTagList berries = new NBTTagList();
         for (BlockPos b : this.berries) {
@@ -286,31 +255,6 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         } catch (Exception e) {
             targetSpawn = null;
         }
-
-        NBTTagList hollows = parentNBTTagCompound.getTagList("storageHollows", 10);
-        for (int i = 0; i < hollows.tagCount(); i++) {
-            NBTTagCompound comp = hollows.getCompoundTagAt(i);
-            BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
-            this.storageHollows.add(pos);
-        }
-        NBTTagList fluidHollows = parentNBTTagCompound.getTagList("fluidHollows", 10);
-        for (int i = 0; i < fluidHollows.tagCount(); i++) {
-            NBTTagCompound comp = fluidHollows.getCompoundTagAt(i);
-            BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
-            this.fluidHollows.add(pos);
-        }
-        NBTTagList pullers = parentNBTTagCompound.getTagList("pullers", 10);
-        for (int i = 0; i < pullers.tagCount(); i++) {
-            NBTTagCompound comp = pullers.getCompoundTagAt(i);
-            BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
-            this.pullers.add(pos);
-        }
-        NBTTagList pushers = parentNBTTagCompound.getTagList("pushers", 10);
-        for (int i = 0; i < pushers.tagCount(); i++) {
-            NBTTagCompound comp = pushers.getCompoundTagAt(i);
-            BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
-            this.pushers.add(pos);
-        }
         NBTTagList berries = parentNBTTagCompound.getTagList("berries", 10);
         for (int i = 0; i < berries.tagCount(); i++) {
             NBTTagCompound comp = berries.getCompoundTagAt(i);
@@ -322,6 +266,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             NBTTagCompound comp = roots.getCompoundTagAt(i);
             BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
             this.roots.add(pos);
+        }
+        NBTTagList integrations = parentNBTTagCompound.getTagList("interactables", 10);
+        for (int i = 0; i < integrations.tagCount(); i++) {
+            NBTTagCompound comp = integrations.getCompoundTagAt(i);
+            BlockPos pos = new BlockPos(comp.getInteger("x"), comp.getInteger("y"), comp.getInteger("z"));
+            this.interactables.add(pos);
         }
 
     }
@@ -380,40 +330,18 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         this.berries.remove(position);
     }
 
-    public void addStorageHollow(BlockPos position) {
-        this.storageHollows.add(position);
+    public void addInteractable(BlockPos position){
+        this.interactables.add(position);
     }
 
-    public void addFluidHollow(BlockPos position) {
-        this.fluidHollows.add(position);
-    }
-
-    public void removeFluidHollow(BlockPos position) {
-        this.fluidHollows.remove(position);
-    }
-
-    public void removeStorageHollow(BlockPos position) {
-        this.storageHollows.remove(position);
-    }
-
-    public void addPuller(BlockPos position) {
-        this.pullers.add(position);
-    }
-
-    public void removePuller(BlockPos position) {
-        this.pullers.remove(position);
-    }
-
-    public void addPusher(BlockPos position) {
-        this.pushers.add(position);
-    }
-
-    public void removePusher(BlockPos position) {
-        this.pushers.remove(position);
+    public void removeInteractable(BlockPos position) {
+        this.interactables.remove(position);
     }
 
     public boolean hasFluids() {
-        for (BlockPos bp : this.fluidHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.getFilled() != 0L) {
                 return true;
@@ -423,7 +351,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean hasItems() {
-        for (BlockPos bp : this.storageHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if (!teStorageHollow.isEmpty()) {
                 return true;
@@ -433,7 +363,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public ItemStack getFirstItemstackFromInventoryMatching(ItemStack toGet) {
-        for (BlockPos bp : this.storageHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             int i = 0;
             for (ItemStack stack : teStorageHollow.getItemStacks()) {
@@ -457,7 +389,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean hasRoomLeft() {
-        for (BlockPos bp : this.storageHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if (!teStorageHollow.isFull()) {
                 return true;
@@ -467,7 +401,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean hasFluidRoomLeft() {
-        for (BlockPos bp : this.fluidHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teStorageHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teStorageHollow.getFilled() != teStorageHollow.getCapacity()) {
                 return true;
@@ -477,7 +413,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean storeItemInFirstOpenSlot(ItemStack stack) {
-        for (BlockPos bp : this.storageHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if (teStorageHollow.addItem(stack)) {
                 return true;
@@ -488,7 +426,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     // Additive liquid check. Can we remove this liquid, if we iterate through all fluid hollows?
     public boolean canRemoveAllLiquid(Fluid fluid, Long amt) {
-        for (BlockPos bp : this.fluidHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.containsFluid(fluid)) {
                 // This guy has some of that fluid.
@@ -506,7 +446,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public void doRemoveAllLiquid(Fluid fluid, Long amt) {
-        for (BlockPos bp : this.fluidHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.containsFluid(fluid)) {
                 // This guy has some of that fluid.
@@ -524,7 +466,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public boolean canStoreLiquid(Fluid fluid, Long amt) {
-        for (BlockPos bp : this.fluidHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.getFilled() <= (teFluidHollow.getCapacity() - amt)) {
                 // We're solid. We can fill it all entirely in here
@@ -539,7 +483,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     public void doStoreLiquid(Fluid fluid, Long amt) {
-        for (BlockPos bp : this.fluidHollows) {
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.getFilled() <= (teFluidHollow.getCapacity() - amt)) {
                 // We're solid. We can fill it all entirely in here
@@ -588,9 +534,11 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 // 																		you need to markDirty() to force a resend.  In this case, the client doesn't need to know
 
         // Item checks
-        if (!pullers.isEmpty() && hasRoomLeft()) {
+        if (hasRoomLeft()) {
             // We can pull things, maybe!
-            for (BlockPos pos : pullers) {
+            for (BlockPos pos : interactables) {
+                IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te.getType() != IInteractable.InteractableType.PULLER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPuller) {
                     TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
                     if (tePuller == null) continue;
@@ -623,8 +571,10 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             }
         }
 
-        if (!pushers.isEmpty() && hasItems()) {
-            for (BlockPos pos : pushers) {
+        if (hasItems()) {
+            for (BlockPos pos : interactables) {
+                IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te.getType() != IInteractable.InteractableType.PUSHER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPusher) {
                     TEPusher tePusher = (TEPusher) world.getTileEntity(pos);
                     if (tePusher == null) continue;
@@ -653,10 +603,12 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
 
         // Let's do fluid stuff too!
-        if (!pullers.isEmpty() && hasFluidRoomLeft()) {
+        if (hasFluidRoomLeft()) {
             // We can try to pull fluids, if we are capable of pulling fluids.
 
-            for (BlockPos pos : pullers) {
+            for (BlockPos pos : interactables) {
+                IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te.getType() != IInteractable.InteractableType.PULLER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPuller) {
                     TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
                     if (tePuller == null) continue;
@@ -689,8 +641,10 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
 
         // Let's try fluid pushing, too!
-        if (!pushers.isEmpty() && hasFluids()) {
-            for (BlockPos pos : pushers) {
+        if (hasFluids()) {
+            for (BlockPos pos : interactables) {
+                IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te.getType() != IInteractable.InteractableType.PUSHER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPusher) {
                     TEPusher tePusher = (TEPusher) world.getTileEntity(pos);
                     if (tePusher == null) continue;
@@ -824,7 +778,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     private boolean itemContainedInStorage(ItemStack stackToFind) {
-        for (BlockPos storage : storageHollows) {
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
@@ -838,7 +794,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
     private List<ItemStack> allItemsInStorage() {
         List<ItemStack> toReturn = new ArrayList<ItemStack>();
-        for (BlockPos storage : storageHollows) {
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
@@ -865,7 +823,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
                 int amtToPull = 1 + this.funcoCount;
                 int count = 0;
-                for (BlockPos storage : storageHollows) {
+                for (BlockPos storage : interactables) {
+                    IInteractable te = (IInteractable) world.getTileEntity(storage);
+                    if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
                     TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
                     for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                         ItemStack stack = storageHollow.getStackInSlot(i);
@@ -952,7 +912,9 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     private TEStorageHollow tryRemoveItemFromInventory(ItemStack stackToRemove) {
-        for (BlockPos storage : storageHollows) {
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
                 ItemStack stack = storageHollow.getStackInSlot(i);
@@ -1129,28 +1091,6 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     }
 
     private boolean pullLiquids(BlockPos place, EnumFacing face, ItemStack[] filter) {
-        // Let's see if this block is a fluid handler, of some sort.
-        //Block blockToSuckFrom = world.getBlockState(place).getBlock();
-
-        // Don't think we need this?
-//        if (blockToSuckFrom instanceof BlockFluidBase) {
-//            // We can suck this block up into the tree.
-//            BlockFluidBase bfb = (BlockFluidBase) blockToSuckFrom;
-//
-//            Fluid fluid = bfb.getFluid();
-//
-//            boolean result = storeLiquidInFirstOpenSlot(fluid, 1000L);
-//
-//            if (result) {
-//                world.setBlockToAir(place);
-//                return true;
-//            }
-//
-//            return true;
-//        }
-
-        // It wasn't a block fluid, but maybe it's some sort of tank.
-
         IFluidHandler handler = FluidUtil.getFluidHandler(world, place, face);
         if (handler == null) {
             // We cannot pull from this block, at all. So return
@@ -1327,7 +1267,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             this.filterItems = filterItems;
 
             ArrayList<ItemStack> withSpecialsRemoved = new ArrayList<>();
-            // TODO go through items in the filter list, find any special thigns and mark those flags.
+            // TODO go through items in the filter list, find any special things and mark those flags.
             for (ItemStack is : filterItems) {
                 if (is.getItem() == ModItems.tokenPullAll) {
                     // We don't need this one
