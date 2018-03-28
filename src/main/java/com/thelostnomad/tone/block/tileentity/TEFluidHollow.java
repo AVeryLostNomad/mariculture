@@ -6,6 +6,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 
@@ -13,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class TEFluidHollow extends TileEntity implements IInteractable {
+public class TEFluidHollow extends TileEntity implements IInteractable, ICapabilityProvider {
 
     public static final String NAME = "tone_fluidhollow_tileentity";
     private BlockPos coreLocation = null;

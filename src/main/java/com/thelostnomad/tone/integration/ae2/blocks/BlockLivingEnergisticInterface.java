@@ -79,7 +79,7 @@ public class BlockLivingEnergisticInterface extends Block implements ITree, ITil
             tileEntityData.addInteractable(pos);
             TELivingEnergisticInterface tei = (TELivingEnergisticInterface) worldIn.getTileEntity(pos);
             tei.setPlacingPlayer((EntityPlayer) placer);
-            tei.setCoreLocation(pos);
+            tei.setCoreLocation(core);
         }
     }
 

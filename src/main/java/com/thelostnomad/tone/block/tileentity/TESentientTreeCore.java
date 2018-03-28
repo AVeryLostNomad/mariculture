@@ -8,10 +8,11 @@ import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
 import com.thelostnomad.tone.block.berries.RezzoBerry;
-import com.thelostnomad.tone.integration.IToneInventoryable;
 import com.thelostnomad.tone.item.tokens.ItemToken;
 import com.thelostnomad.tone.registry.ModItems;
-import com.thelostnomad.tone.util.*;
+import com.thelostnomad.tone.util.LifeUtil;
+import com.thelostnomad.tone.util.MobUtil;
+import com.thelostnomad.tone.util.TreeUtil;
 import com.thelostnomad.tone.util.crafting.CraftTreeBuilder;
 import com.thelostnomad.tone.util.crafting.StackUtil;
 import com.thelostnomad.tone.util.world.IInteractable;
@@ -20,11 +21,8 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemFood;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
 import net.minecraft.nbt.*;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.play.server.SPacketUpdateTileEntity;
@@ -412,6 +410,19 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teStorageHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teStorageHollow.getFilled() != teStorageHollow.getCapacity()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean canFitItem(ItemStack stack){
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
+            TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
+            if (teStorageHollow.canAddItem(stack)) {
                 return true;
             }
         }

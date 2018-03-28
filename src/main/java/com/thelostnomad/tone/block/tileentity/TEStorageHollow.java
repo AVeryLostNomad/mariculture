@@ -1,6 +1,5 @@
 package com.thelostnomad.tone.block.tileentity;
 
-import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,7 +9,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
@@ -84,6 +82,23 @@ public class TEStorageHollow extends TileEntity implements IInventory, IInteract
             }
         }
         return total;
+    }
+
+    public synchronized boolean canAddItem(ItemStack stack){
+        boolean found = false;
+        for (ItemStack i : itemStacks) {
+            if (i.isEmpty()) continue;
+            if (i.getItem() == stack.getItem()) {
+                // We can go ahead and put this here.
+                if ((i.getCount() + stack.getCount()) >= this.getInventoryStackLimit()) continue;
+                found = true;
+                return true;
+            }
+        }
+        if(!found && (this.getFilled() != this.getCapacity())){
+            return true;
+        }
+        return false;
     }
 
     public synchronized boolean addItem(ItemStack stack) {

@@ -16,19 +16,23 @@ import appeng.api.util.*;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.integration.IToneInventoryable;
-import com.thelostnomad.tone.network.TonePacketHandler;
 import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,9 +40,104 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
-public class TELivingEnergisticInterface extends TileEntity implements IGridHost, IGridBlock, ITickable, IEnergySource, IActionSource, IToneInventoryable, IInteractable, IInventory {
+public class TELivingEnergisticInterface extends TileEntity implements IGridHost, IGridBlock, ITickable,
+        IEnergySource, IActionSource, IToneInventoryable, IInteractable, ICapabilityProvider {
 
     public static final String NAME = "tone_ae2_livingenergisticinterface";
+
+    private ItemStackHandler inventory = new ItemStackHandler(){
+        @Override
+        public void setStackInSlot(int slot, @Nonnull ItemStack stack)
+        {
+            getCore().overallSetContents(slot, stack);
+        }
+
+        @Override
+        public int getSlots(){
+            return getCore().getOverallSizeInventory();
+        }
+
+
+        @Override
+        @Nonnull
+        public ItemStack getStackInSlot(int slot)
+        {
+            return getCore().getOverallStackInSlot(slot);
+        }
+
+        @Override
+        @Nonnull
+        public ItemStack insertItem(int slot, @Nonnull ItemStack stack, boolean simulate)
+        {
+            if (stack.isEmpty())
+                return ItemStack.EMPTY;
+
+            ItemStack existing = getCore().getOverallStackInSlot(slot);
+
+            int limit = getStackLimit(slot, stack);
+
+            if (!existing.isEmpty())
+            {
+                if (!ItemHandlerHelper.canItemStacksStack(stack, existing))
+                    return stack;
+
+                limit -= existing.getCount();
+            }
+
+            if (limit <= 0)
+                return stack;
+
+            boolean reachedLimit = stack.getCount() > limit;
+
+            if (!simulate)
+            {
+                if (existing.isEmpty())
+                {
+                    setStackInSlot(slot, reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, limit) : stack);
+                }
+                else
+                {
+                    existing.grow(reachedLimit ? limit : stack.getCount());
+                }
+                onContentsChanged(slot);
+            }
+
+            return reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, stack.getCount()- limit) : ItemStack.EMPTY;
+        }
+
+        @Override
+        @Nonnull
+        public ItemStack extractItem(int slot, int amount, boolean simulate)
+        {
+            if (amount == 0)
+                return ItemStack.EMPTY;
+
+            ItemStack existing = getCore().getOverallStackInSlot(slot);
+
+            if (existing.isEmpty())
+                return ItemStack.EMPTY;
+
+            int toExtract = Math.min(amount, existing.getMaxStackSize());
+
+            if (existing.getCount() <= toExtract)
+            {
+                if (!simulate)
+                {
+                    setStackInSlot(slot, ItemStack.EMPTY);
+                }
+                return existing;
+            }
+            else
+            {
+                if (!simulate)
+                {
+                    setStackInSlot(slot, ItemHandlerHelper.copyStackWithSize(existing, existing.getCount() - toExtract));
+                }
+
+                return ItemHandlerHelper.copyStackWithSize(existing, toExtract);
+            }
+        }
+    };
 
     IGridNode node = null;
     boolean initialized = false;
@@ -319,96 +418,20 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
         return Optional.empty();
     }
 
-    // The stuff to allow AE2 to see this tree's inventory. We'll provide the lot of our stuff to it.
-
-    @Override
-    public int getSizeInventory() {
-        return getCore().getOverallSizeInventory();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return getCore().hasItems();
-    }
-
-    // More tricky to handle, because it is referencing each slot of our interactables.
-    @Override
-    public ItemStack getStackInSlot(int index) {
-        return getCore().getOverallStackInSlot(index);
-    }
-
-    @Override
-    public ItemStack decrStackSize(int index, int count) {
-        return getCore().overallDecrStackSize(index, count);
-    }
-
-    @Override
-    public ItemStack removeStackFromSlot(int index) {
-        return getCore().overallRemoveStack(index);
-    }
-
-    @Override
-    public void setInventorySlotContents(int index, ItemStack stack) {
-        getCore().overallSetContents(index, stack);
-    }
-
-    @Override
-    public int getInventoryStackLimit() {
-        return 64;
-    }
-
-    @Override
-    public boolean isUsableByPlayer(EntityPlayer player) {
-        return true;
-    }
-
-    @Override
-    public void openInventory(EntityPlayer player) {
-
-    }
-
-    @Override
-    public void closeInventory(EntityPlayer player) {
-
-    }
-
-    @Override
-    public boolean isItemValidForSlot(int index, ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getField(int id) {
-        return 0;
-    }
-
-    @Override
-    public void setField(int id, int value) {
-
-    }
-
-    @Override
-    public int getFieldCount() {
-        return 0;
-    }
-
-    @Override
-    public void clear() {
-
-    }
-
-    @Override
-    public String getName() {
-        return "SentientTree";
-    }
-
-    @Override
-    public boolean hasCustomName() {
-        return false;
-    }
-
     @Override
     public InteractableType getType() {
         return InteractableType.INTEGRATION;
     }
+
+    @Override
+    public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
+        return capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
+    }
+
+    @Nullable
+    @Override
+    public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
+        return capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY ? (T)inventory : super.getCapability(capability, facing);
+    }
+
 }
