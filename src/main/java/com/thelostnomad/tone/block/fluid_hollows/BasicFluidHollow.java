@@ -103,7 +103,7 @@ public class BasicFluidHollow extends BlockContainer implements ITree {
                 TileEntity te = worldIn.getTileEntity(thisHollow.getCoreLocation());
                 if (te != null && te instanceof TESentientTreeCore) {
                     TESentientTreeCore core = (TESentientTreeCore) te;
-                    core.removeFluidHollow(pos);
+                    core.removeInteractable(pos);
                 }
             }
         }
@@ -172,7 +172,7 @@ public class BasicFluidHollow extends BlockContainer implements ITree {
         TileEntity tileentity = worldIn.getTileEntity(core);
         if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
-            tileEntityData.addFluidHollow(pos);
+            tileEntityData.addInteractable(pos);
             TEFluidHollow thisStorageHollow = (TEFluidHollow) worldIn.getTileEntity(pos);
             thisStorageHollow.setCoreLocation(core);
         }

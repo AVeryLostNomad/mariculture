@@ -1,24 +1,23 @@
 package com.thelostnomad.tone.block.container;
 
+import com.thelostnomad.tone.block.tileentity.TEKeeper;
 import com.thelostnomad.tone.block.tileentity.TEPuller;
-import com.thelostnomad.tone.block.tileentity.TEPusher;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
-public class ContainerPusher extends Container {
+public class ContainerKeeper extends Container {
 
     // Stores a reference to the tile entity instance for later use
-    private TEPusher tePusher;
+    private TEKeeper teKeeper;
 
     // must assign a slot number to each of the slots used by the GUI.
     // For this container, we can see both the tile inventory's slots as well as the player inventory slots and the hotbar.
     // Each time we add a Slot to the container, it automatically increases the slotIndex, which means
     //  0 - 8 = hotbar slots (which will map to the InventoryPlayer slot numbers 0 - 8)
     //  9 - 35 = player inventory slots (which map to the InventoryPlayer slot numbers 9 - 35)
-    //  36 - 44 = TileInventory slots, which map to our TileEntity slot numbers 0 - 8)
 
     private final int HOTBAR_SLOT_COUNT = 9;
     private final int PLAYER_INVENTORY_ROW_COUNT = 3;
@@ -28,10 +27,10 @@ public class ContainerPusher extends Container {
 
     private final int VANILLA_FIRST_SLOT_INDEX = 0;
     private final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
-    private final int TE_INVENTORY_SLOT_COUNT = 9;
+    private final int TE_INVENTORY_SLOT_COUNT = 2;
 
-    public ContainerPusher(InventoryPlayer invPlayer, TEPusher tilePuller) {
-        this.tePusher = tilePuller;
+    public ContainerKeeper(InventoryPlayer invPlayer, TEKeeper tilePuller) {
+        this.teKeeper = tilePuller;
 
         final int SLOT_X_SPACING = 18;
         final int SLOT_Y_SPACING = 18;
@@ -55,25 +54,20 @@ public class ContainerPusher extends Container {
             }
         }
 
-        if (TE_INVENTORY_SLOT_COUNT != tePusher.getSizeInventory()) {
+        if (TE_INVENTORY_SLOT_COUNT != teKeeper.getSizeInventory()) {
             System.err.println("Mismatched slot count in ContainerBasic(" + TE_INVENTORY_SLOT_COUNT
-                    + ") and TileInventory (" + tePusher.getSizeInventory()+")");
+                    + ") and TileInventory (" + teKeeper.getSizeInventory()+")");
         }
 
-        final int TILE_INVENTORY_XPOS = 8;
-        final int TILE_INVENTORY_YPOS = 20;
-        // Add the tile inventory container to the gui
-        for (int x = 0; x < TE_INVENTORY_SLOT_COUNT; x++) {
-            int slotNumber = x;
-            addSlotToContainer(new Slot(tePusher, slotNumber, TILE_INVENTORY_XPOS + SLOT_X_SPACING * x, TILE_INVENTORY_YPOS));
-        }
+        addSlotToContainer(new Slot(teKeeper, 36, 7, 19));
+        addSlotToContainer(new Slot(teKeeper, 37, 151, 19));
     }
 
     // Vanilla calls this method every tick to make sure the player is still able to access the inventory, and if not closes the gui
     @Override
     public boolean canInteractWith(EntityPlayer player)
     {
-        return tePusher.isUsableByPlayer(player);
+        return teKeeper.isUsableByPlayer(player);
     }
 
     // This is where you specify what happens when a player shift clicks a slot in the gui
@@ -124,7 +118,7 @@ public class ContainerPusher extends Container {
     public void onContainerClosed(EntityPlayer playerIn)
     {
         super.onContainerClosed(playerIn);
-        this.tePusher.closeInventory(playerIn);
+        this.teKeeper.closeInventory(playerIn);
     }
 
 }

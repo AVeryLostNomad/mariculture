@@ -37,9 +37,12 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
 
     public BasicStorageHollow() {
         super(Material.WOOD);
+        initialize();
+    }
+
+    public void initialize(){
         setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".storagehollow_basic");     // Used for localization (en_US.lang)
         setRegistryName("storagehollow_basic");        // The unique name (within your mod) that identifies this block
-        this.setCreativeTab(ThingsOfNaturalEnergies.creativeTab);     // the block will appear on the Blocks tab.
         setCreativeTab(ThingsOfNaturalEnergies.creativeTab);
     }
 
@@ -88,16 +91,6 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
             List<ITextComponent> toSend = new ArrayList<ITextComponent>();
             toSend.add(new TextComponentString("This storage hollow is " + String.valueOf(percentage) + " filled " +
                     "(" + String.valueOf(filled) + "/" + String.valueOf(cap) + ")"));
-            Map<String, Integer> ah = new HashMap<String, Integer>();
-            for(ItemStack is : storage.getItemStacks()){
-                RecipeUtil.ComparableItem ci = new RecipeUtil.ComparableItem(is.getItem());
-                if(ah.containsKey(ci.toString())){
-                    ah.put(ci.toString(), ah.get(ci.toString()) + is.getCount());
-                }else{
-                    ah.put(ci.toString(), is.getCount());
-                }
-            }
-            toSend.add(new TextComponentString(ah.toString()));
             ChatUtil.sendNoSpam(playerIn, toSend.toArray(new ITextComponent[toSend.size()]));
         }
 //        playerIn.openGui(MinecraftByExample.instance, GuiHandlerMBE30.getGuiID(), worldIn, pos.getX(), pos.getY(), pos.getZ());
@@ -144,7 +137,7 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
                 TileEntity te = worldIn.getTileEntity(thisHollow.getCoreLocation());
                 if (te != null && te instanceof TESentientTreeCore) {
                     TESentientTreeCore core = (TESentientTreeCore) te;
-                    core.removeStorageHollow(pos);
+                    core.removeInteractable(pos);
                 }
             }
         }
@@ -213,7 +206,7 @@ public class BasicStorageHollow extends BlockContainer implements ITree {
         TileEntity tileentity = worldIn.getTileEntity(core);
         if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
-            tileEntityData.addStorageHollow(pos);
+            tileEntityData.addInteractable(pos);
             TEStorageHollow thisStorageHollow = (TEStorageHollow) worldIn.getTileEntity(pos);
             thisStorageHollow.setCoreLocation(core);
         }

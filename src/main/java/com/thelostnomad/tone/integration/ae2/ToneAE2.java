@@ -1,5 +1,7 @@
 package com.thelostnomad.tone.integration.ae2;
 
+import appeng.api.AEApi;
+import appeng.api.storage.data.IAEItemStack;
 import com.thelostnomad.tone.integration.IToneIntegration;
 import com.thelostnomad.tone.integration.ae2.blocks.BlockLivingEnergisticInterface;
 import com.thelostnomad.tone.integration.ae2.tileentity.TELivingEnergisticInterface;

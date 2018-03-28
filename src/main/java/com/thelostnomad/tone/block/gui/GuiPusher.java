@@ -9,6 +9,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.client.config.GuiCheckBox;
 
 import java.awt.*;
 
@@ -24,16 +25,18 @@ public class GuiPusher extends GuiContainer {
         // Set the width and height of the gui.  Should match the size of the texture!
         xSize = 176;
         ySize = 133;
+
     }
 
     // draw the background for the GUI - rendered first
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int x, int y) {
-        // Bind the image texture of our custom container
-        Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
-        // Draw the image
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
+        // Bind the image texture of our custom container
+        this.drawDefaultBackground();
+        // Draw the image
+        this.mc.getTextureManager().bindTexture(texture);
+        drawModalRectWithCustomSizedTexture(guiLeft, guiTop, 1.0f, 1.0f, 175, 132, 256, 256);
     }
 
     // draw the foreground for the GUI - rendered after the slots, but before the dragged items and tooltips
@@ -43,5 +46,6 @@ public class GuiPusher extends GuiContainer {
         final int LABEL_XPOS = 5;
         final int LABEL_YPOS = 5;
         fontRenderer.drawString("Pusher", LABEL_XPOS, LABEL_YPOS, Color.darkGray.getRGB());
+        this.renderHoveredToolTip(mouseX - guiLeft, mouseY - guiTop);
     }
 }

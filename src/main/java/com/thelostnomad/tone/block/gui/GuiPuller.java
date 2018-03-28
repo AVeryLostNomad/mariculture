@@ -29,12 +29,12 @@ public class GuiPuller extends GuiContainer {
     // draw the background for the GUI - rendered first
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int x, int y) {
+        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         // Bind the image texture of our custom container
-        Minecraft.getMinecraft().getTextureManager().bindTexture(texture);
         this.drawDefaultBackground();
         // Draw the image
-        GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        drawTexturedModalRect(guiLeft, guiTop, 0, 0, xSize, ySize);
+        this.mc.getTextureManager().bindTexture(texture);
+        drawModalRectWithCustomSizedTexture(guiLeft, guiTop, 1.0f, 1.0f, 175, 132, 256, 256);
     }
 
     // draw the foreground for the GUI - rendered after the slots, but before the dragged items and tooltips
@@ -44,6 +44,6 @@ public class GuiPuller extends GuiContainer {
         final int LABEL_XPOS = 5;
         final int LABEL_YPOS = 5;
         fontRenderer.drawString("Puller", LABEL_XPOS, LABEL_YPOS, Color.darkGray.getRGB());
-        this.renderHoveredToolTip(mouseX, mouseY);
+        this.renderHoveredToolTip(mouseX - guiLeft, mouseY - guiTop);
     }
 }

@@ -14,9 +14,12 @@ import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.util.*;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.integration.IToneInventoryable;
 import com.thelostnomad.tone.network.TonePacketHandler;
+import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
@@ -33,7 +36,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
-public class TELivingEnergisticInterface extends TileEntity implements IGridHost, IGridBlock, ITickable, IEnergySource, IActionSource, IToneInventoryable {
+public class TELivingEnergisticInterface extends TileEntity implements IGridHost, IGridBlock, ITickable, IEnergySource, IActionSource, IToneInventoryable, IInteractable, IInventory {
 
     public static final String NAME = "tone_ae2_livingenergisticinterface";
 
@@ -59,6 +62,7 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
         return coreLocation;
     }
 
+    // Push an item to the AE system
     public boolean pushItem(ItemStack target){
         if(node == null){
             return false;
@@ -79,6 +83,7 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
         return false;
     }
 
+    // Pull an item from the AE system
     public ItemStack pullItem(ItemStack i){
         if(node == null){
             return null;
@@ -143,6 +148,10 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
     public IGridNode refreshNode() {
         node = AEApi.instance().grid().createGridNode(this);
         return node;
+    }
+
+    public TESentientTreeCore getCore() {
+        return coreLocation == null ? null : (TESentientTreeCore) world.getTileEntity(coreLocation);
     }
 
     public IGridNode getNode() {
@@ -308,5 +317,98 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
     @Override
     public <T> Optional<T> context(@Nonnull Class<T> aClass) {
         return Optional.empty();
+    }
+
+    // The stuff to allow AE2 to see this tree's inventory. We'll provide the lot of our stuff to it.
+
+    @Override
+    public int getSizeInventory() {
+        return getCore().getOverallSizeInventory();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return getCore().hasItems();
+    }
+
+    // More tricky to handle, because it is referencing each slot of our interactables.
+    @Override
+    public ItemStack getStackInSlot(int index) {
+        return getCore().getOverallStackInSlot(index);
+    }
+
+    @Override
+    public ItemStack decrStackSize(int index, int count) {
+        return getCore().overallDecrStackSize(index, count);
+    }
+
+    @Override
+    public ItemStack removeStackFromSlot(int index) {
+        return getCore().overallRemoveStack(index);
+    }
+
+    @Override
+    public void setInventorySlotContents(int index, ItemStack stack) {
+        getCore().overallSetContents(index, stack);
+    }
+
+    @Override
+    public int getInventoryStackLimit() {
+        return 64;
+    }
+
+    @Override
+    public boolean isUsableByPlayer(EntityPlayer player) {
+        return true;
+    }
+
+    @Override
+    public void openInventory(EntityPlayer player) {
+
+    }
+
+    @Override
+    public void closeInventory(EntityPlayer player) {
+
+    }
+
+    @Override
+    public boolean isItemValidForSlot(int index, ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public int getField(int id) {
+        return 0;
+    }
+
+    @Override
+    public void setField(int id, int value) {
+
+    }
+
+    @Override
+    public int getFieldCount() {
+        return 0;
+    }
+
+    @Override
+    public void clear() {
+
+    }
+
+    @Override
+    public String getName() {
+        return "SentientTree";
+    }
+
+    @Override
+    public boolean hasCustomName() {
+        return false;
+    }
+
+    @Override
+    public InteractableType getType() {
+        return InteractableType.INTEGRATION;
     }
 }

@@ -11,7 +11,8 @@ public interface IInteractable {
         FLUID,
         PUSHER,
         PULLER,
-        INTEGRATION
+        INTEGRATION,
+        KEEPER
     }
 
 }

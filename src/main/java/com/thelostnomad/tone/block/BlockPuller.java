@@ -129,7 +129,7 @@ public class BlockPuller extends BlockContainer implements ITree {
         TileEntity tileentity = worldIn.getTileEntity(core);
         if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
-            tileEntityData.addPuller(pos);
+            tileEntityData.addInteractable(pos);
             TEPuller thisPuller = (TEPuller) worldIn.getTileEntity(pos);
             thisPuller.setCoreLocation(core);
         }
@@ -144,7 +144,7 @@ public class BlockPuller extends BlockContainer implements ITree {
                 TileEntity te = worldIn.getTileEntity(thisHollow.getCoreLocation());
                 if (te != null && te instanceof TESentientTreeCore) {
                     TESentientTreeCore core = (TESentientTreeCore) te;
-                    core.removePuller(pos);
+                    core.removeInteractable(pos);
                 }
             }
         }

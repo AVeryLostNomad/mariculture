@@ -7,6 +7,7 @@ import com.thelostnomad.tone.util.ChatUtil;
 import com.thelostnomad.tone.util.world.ITree;
 import com.thelostnomad.tone.util.TreeUtil;
 import net.minecraft.block.Block;
+import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
@@ -24,10 +25,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockLivingEnergisticInterface extends Block implements ITree {
+public class BlockLivingEnergisticInterface extends Block implements ITree, ITileEntityProvider {
 
     public BlockLivingEnergisticInterface() {
         super(Material.WOOD);
@@ -74,7 +76,7 @@ public class BlockLivingEnergisticInterface extends Block implements ITree {
         TileEntity tileentity = worldIn.getTileEntity(core);
         if (tileentity instanceof TESentientTreeCore) { // prevent a crash if not the right type, or is null
             TESentientTreeCore tileEntityData = (TESentientTreeCore) tileentity;
-            tileEntityData.addIntegration(pos);
+            tileEntityData.addInteractable(pos);
             TELivingEnergisticInterface tei = (TELivingEnergisticInterface) worldIn.getTileEntity(pos);
             tei.setPlacingPlayer((EntityPlayer) placer);
             tei.setCoreLocation(pos);
@@ -105,4 +107,9 @@ public class BlockLivingEnergisticInterface extends Block implements ITree {
         return true;
     }
 
+    @Nullable
+    @Override
+    public TileEntity createNewTileEntity(World worldIn, int meta) {
+        return new TELivingEnergisticInterface();
+    }
 }

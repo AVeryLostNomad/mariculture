@@ -9,7 +9,9 @@ import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.block.fluid.BlockTransmutationGas;
 import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
 import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
+import com.thelostnomad.tone.block.storage_hollows.BigStorageHollow;
 import com.thelostnomad.tone.block.tileentity.*;
+import com.thelostnomad.tone.entities.nature_sprite.NatureSpriteEntity;
 import com.thelostnomad.tone.integration.IToneIntegration;
 import com.thelostnomad.tone.integration.ae2.ToneAE2;
 import com.thelostnomad.tone.registry.*;
@@ -18,19 +20,24 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockTrapDoor;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Biomes;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.Style;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
@@ -68,6 +75,7 @@ public class CommonProxy {
         GameRegistry.registerTileEntity(TEPuller.class, TEPuller.NAME);
         GameRegistry.registerTileEntity(TEPusher.class, TEPusher.NAME);
         GameRegistry.registerTileEntity(TELivingCraftingStation.class, TELivingCraftingStation.NAME);
+        GameRegistry.registerTileEntity(TEKeeper.class, TEKeeper.NAME);
 
         for(IToneIntegration integration : toneIntegrations){
             if(Loader.isModLoaded(integration.getIntegrationModid())){
@@ -101,12 +109,14 @@ public class CommonProxy {
         event.getRegistry().register(new RootBlock());
         event.getRegistry().register(new SentientTreeCore());
         event.getRegistry().register(new BasicStorageHollow());
+        event.getRegistry().register(new BigStorageHollow());
         event.getRegistry().register(new BasicFluidHollow());
         event.getRegistry().register(new SentientSapling());
         event.getRegistry().register(new SentientLog());
         event.getRegistry().register(new SentientLeaves());
         event.getRegistry().register(new BlockPuller());
         event.getRegistry().register(new BlockPusher());
+        event.getRegistry().register(new BlockKeeper());
 //        event.getRegistry().register(new BlockTransmutationGas());
         event.getRegistry().register(new BlockLivingCraftingStation());
 
@@ -128,6 +138,7 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.rootsBlock).setRegistryName(ModBlocks.rootsBlock.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientTreeCore).setRegistryName(ModBlocks.sentientTreeCore.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.storageHollowBasic).setRegistryName(ModBlocks.storageHollowBasic.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.storageHollowBig).setRegistryName(ModBlocks.storageHollowBig.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.fluidHollowBasic).setRegistryName(ModBlocks.fluidHollowBasic.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientLeaves).setRegistryName(ModBlocks.sentientLeaves.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.sentientLog).setRegistryName(ModBlocks.sentientLog.getRegistryName()));
@@ -140,6 +151,7 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.rezzoBerry).setRegistryName(ModBlocks.rezzoBerry.getRegistryName()));
 //        event.getRegistry().register(new ItemBlock(ModBlocks.transmutationGas).setRegistryName(ModBlocks.transmutationGas.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.livingCraftingStation).setRegistryName(ModBlocks.livingCraftingStation.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.blockKeeper).setRegistryName(ModBlocks.blockKeeper.getRegistryName()));
 
         event.getRegistry().register(ModItems.tokenPullAll);
         event.getRegistry().register(ModItems.hastoBerryItem);

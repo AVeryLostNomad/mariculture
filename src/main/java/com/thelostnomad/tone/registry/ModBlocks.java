@@ -10,6 +10,8 @@ import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.block.fluid.BlockTransmutationGas;
 import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
 import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
+import com.thelostnomad.tone.block.storage_hollows.BigStorageHollow;
+import javafx.scene.effect.Glow;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
@@ -29,6 +31,10 @@ public class ModBlocks {
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_basic")
     public static BasicStorageHollow storageHollowBasic;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_big")
+    public static BigStorageHollow storageHollowBig;
+
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:fluidhollow_basic")
     public static BasicFluidHollow fluidHollowBasic;
 
@@ -46,6 +52,9 @@ public class ModBlocks {
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:living_crafting_station")
     public static BlockLivingCraftingStation livingCraftingStation;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:keeper")
+    public static BlockKeeper blockKeeper;
 
     // Berries
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_hasto")

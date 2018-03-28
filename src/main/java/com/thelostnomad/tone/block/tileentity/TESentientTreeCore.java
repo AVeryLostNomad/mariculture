@@ -8,6 +8,7 @@ import com.thelostnomad.tone.block.berries.FuncoBerry;
 import com.thelostnomad.tone.block.berries.GlutoBerry;
 import com.thelostnomad.tone.block.berries.HastoBerry;
 import com.thelostnomad.tone.block.berries.RezzoBerry;
+import com.thelostnomad.tone.integration.IToneInventoryable;
 import com.thelostnomad.tone.item.tokens.ItemToken;
 import com.thelostnomad.tone.registry.ModItems;
 import com.thelostnomad.tone.util.*;
@@ -341,6 +342,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public boolean hasFluids() {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.getFilled() != 0L) {
@@ -353,6 +355,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public boolean hasItems() {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if (!teStorageHollow.isEmpty()) {
@@ -365,6 +368,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public ItemStack getFirstItemstackFromInventoryMatching(ItemStack toGet) {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             int i = 0;
@@ -391,6 +395,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public boolean hasRoomLeft() {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if (!teStorageHollow.isFull()) {
@@ -403,6 +408,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public boolean hasFluidRoomLeft() {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teStorageHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teStorageHollow.getFilled() != teStorageHollow.getCapacity()) {
@@ -415,6 +421,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public boolean storeItemInFirstOpenSlot(ItemStack stack) {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
             if (teStorageHollow.addItem(stack)) {
@@ -428,6 +435,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public boolean canRemoveAllLiquid(Fluid fluid, Long amt) {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.FLUID) continue;
             TEFluidHollow teFluidHollow = (TEFluidHollow) world.getTileEntity(bp);
             if (teFluidHollow.containsFluid(fluid)) {
@@ -537,7 +545,8 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if (hasRoomLeft()) {
             // We can pull things, maybe!
             for (BlockPos pos : interactables) {
-                IInteractable te = (IInteractable) world.getTileEntity(pos);
+                IInteractable te = (IInteractable) ((TileEntity) world.getTileEntity(pos));
+                if(te == null) continue;
                 if(te.getType() != IInteractable.InteractableType.PULLER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPuller) {
                     TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
@@ -574,6 +583,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if (hasItems()) {
             for (BlockPos pos : interactables) {
                 IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te == null) continue;
                 if(te.getType() != IInteractable.InteractableType.PUSHER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPusher) {
                     TEPusher tePusher = (TEPusher) world.getTileEntity(pos);
@@ -608,6 +618,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
 
             for (BlockPos pos : interactables) {
                 IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te == null) continue;
                 if(te.getType() != IInteractable.InteractableType.PULLER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPuller) {
                     TEPuller tePuller = (TEPuller) world.getTileEntity(pos);
@@ -644,6 +655,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         if (hasFluids()) {
             for (BlockPos pos : interactables) {
                 IInteractable te = (IInteractable) world.getTileEntity(pos);
+                if(te == null) continue;
                 if(te.getType() != IInteractable.InteractableType.PUSHER) continue;
                 if (world.getBlockState(pos).getBlock() instanceof BlockPusher) {
                     TEPusher tePusher = (TEPusher) world.getTileEntity(pos);
@@ -1155,6 +1167,80 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         }
 
         return true;
+    }
+
+    public int getOverallSizeInventory(){
+        int totalCount = 0;
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if (te.getType() != IInteractable.InteractableType.STORAGE) continue;
+            TEStorageHollow storageHollow = (TEStorageHollow) te;
+            totalCount += storageHollow.getSizeInventory();
+        }
+        return totalCount;
+    }
+
+    public ItemStack getOverallStackInSlot(int desiredSlot){
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() == IInteractable.InteractableType.STORAGE){
+                TEStorageHollow storageHollow = (TEStorageHollow) te;
+                if(desiredSlot >= storageHollow.getCapacity()){
+                    desiredSlot -= storageHollow.getCapacity();
+                    continue;
+                }else{
+                    return storageHollow.getStackInSlot(desiredSlot);
+                }
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public ItemStack overallDecrStackSize(int desiredSlot, int count){
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() == IInteractable.InteractableType.STORAGE){
+                TEStorageHollow storageHollow = (TEStorageHollow) te;
+                if(desiredSlot >= storageHollow.getCapacity()){
+                    desiredSlot -= storageHollow.getCapacity();
+                    continue;
+                }else{
+                    return storageHollow.decrStackSize(desiredSlot, count);
+                }
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public ItemStack overallRemoveStack(int desiredSlot){
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() == IInteractable.InteractableType.STORAGE){
+                TEStorageHollow storageHollow = (TEStorageHollow) te;
+                if(desiredSlot >= storageHollow.getCapacity()){
+                    desiredSlot -= storageHollow.getCapacity();
+                    continue;
+                }else{
+                    return storageHollow.removeStackFromSlot(desiredSlot);
+                }
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public void overallSetContents(int desiredSlot, ItemStack stack){
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() == IInteractable.InteractableType.STORAGE){
+                TEStorageHollow storageHollow = (TEStorageHollow) te;
+                if(desiredSlot >= storageHollow.getCapacity()){
+                    desiredSlot -= storageHollow.getCapacity();
+                    continue;
+                }else{
+                    storageHollow.setInventorySlotContents(desiredSlot, stack);
+                }
+            }
+        }
     }
 
     private boolean pullItems(BlockPos place, EnumFacing face, ItemStack[] filter) {
