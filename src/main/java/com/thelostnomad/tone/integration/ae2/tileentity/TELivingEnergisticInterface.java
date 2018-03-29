@@ -57,7 +57,6 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
             return getCore().getOverallSizeInventory();
         }
 
-
         @Override
         @Nonnull
         public ItemStack getStackInSlot(int slot)

@@ -3,17 +3,14 @@ package com.thelostnomad.tone.block;
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TEKeeper;
 import com.thelostnomad.tone.block.tileentity.TEPuller;
-import com.thelostnomad.tone.block.tileentity.TEPusher;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
+import com.thelostnomad.tone.network.TonePacketHandler;
 import com.thelostnomad.tone.registry.ModGuiHandler;
 import com.thelostnomad.tone.util.ChatUtil;
 import com.thelostnomad.tone.util.TreeUtil;
 import com.thelostnomad.tone.util.world.ITree;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyDirection;
-import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -26,7 +23,6 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 // Useful interface for other mods.

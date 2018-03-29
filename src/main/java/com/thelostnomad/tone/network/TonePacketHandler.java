@@ -10,6 +10,9 @@ import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
+import sun.misc.Request;
+
+import javax.tools.Diagnostic;
 
 public class TonePacketHandler {
     public static final SimpleNetworkWrapper MSG_INSTANCE = new SimpleNetworkWrapper(ThingsOfNaturalEnergies.MODID);
@@ -20,6 +23,9 @@ public class TonePacketHandler {
         MSG_INSTANCE.registerMessage(LastRecipeMessage.Handler.class, LastRecipeMessage.class, id++, Side.CLIENT);
         MSG_INSTANCE.registerMessage(MessageRecipeSync.Handler.class, MessageRecipeSync.class, id++, Side.SERVER);
         MSG_INSTANCE.registerMessage(MessageCraftingSync.Handler.class, MessageCraftingSync.class, id++, Side.CLIENT);
+        MSG_INSTANCE.registerMessage(GUIUpdatePacket.Handler.class, GUIUpdatePacket.class, id++, Side.SERVER);
+        MSG_INSTANCE.registerMessage(KindlyGiveMeAnUpdatedGUI.Handler.class, KindlyGiveMeAnUpdatedGUI.class, id++, Side.SERVER);
+        MSG_INSTANCE.registerMessage(PlayerGuiSyncMessage.Handler.class, PlayerGuiSyncMessage.class, id++, Side.CLIENT);
 
         for(IToneIntegration iti : CommonProxy.toneIntegrations){
             id+=iti.registerNetworkMessages(MSG_INSTANCE, id);

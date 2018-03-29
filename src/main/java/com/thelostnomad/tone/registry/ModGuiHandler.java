@@ -12,6 +12,7 @@ import com.thelostnomad.tone.block.tileentity.TEKeeper;
 import com.thelostnomad.tone.block.tileentity.TELivingCraftingStation;
 import com.thelostnomad.tone.block.tileentity.TEPuller;
 import com.thelostnomad.tone.block.tileentity.TEPusher;
+import com.thelostnomad.tone.network.TonePacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;

@@ -17,6 +17,7 @@ public class ToneCheckbox extends GuiCheckBox {
         super(id, xPos, yPos, "", isChecked);
         hoverText = displayString;
         this.extraInfo = extraInfoLines;
+        this.setIsChecked(isChecked);
     }
 
     public String getText() {

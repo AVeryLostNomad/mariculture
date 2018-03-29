@@ -1,14 +1,15 @@
 package com.thelostnomad.tone.block.container;
 
 import com.thelostnomad.tone.block.tileentity.TEKeeper;
-import com.thelostnomad.tone.block.tileentity.TEPuller;
+import com.thelostnomad.tone.util.gui.SyncableContainer;
+import com.thelostnomad.tone.util.gui.SyncableTileEntity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
-public class ContainerKeeper extends Container {
+public class ContainerKeeper extends Container implements SyncableContainer{
 
     // Stores a reference to the tile entity instance for later use
     private TEKeeper teKeeper;
@@ -61,6 +62,10 @@ public class ContainerKeeper extends Container {
 
         addSlotToContainer(new Slot(teKeeper, 36, 7, 19));
         addSlotToContainer(new Slot(teKeeper, 37, 151, 19));
+    }
+
+    public SyncableTileEntity getSyncableTileEntity() {
+        return teKeeper;
     }
 
     // Vanilla calls this method every tick to make sure the player is still able to access the inventory, and if not closes the gui

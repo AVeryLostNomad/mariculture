@@ -4,6 +4,7 @@ import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.container.ContainerLivingCraftingStation;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.inventory.ItemStackHelper;

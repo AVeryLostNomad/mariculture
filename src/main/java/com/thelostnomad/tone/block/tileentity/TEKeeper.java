@@ -1,6 +1,7 @@
 package com.thelostnomad.tone.block.tileentity;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.util.gui.SyncableTileEntity;
 import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -8,11 +9,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Arrays;
 
-public class TEKeeper extends TileEntity implements IInventory, IInteractable {
+public class TEKeeper extends TileEntity implements IInventory, IInteractable, ITickable, SyncableTileEntity {
 
     public static final String NAME = "tone_keeper_tileentity";
     private BlockPos coreLocation = null;
@@ -20,7 +22,9 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable {
     private final int NUMBER_OF_SLOTS = 2;
     private ItemStack[] itemStacks;
 
-    private boolean includeInInventory = false;
+    private Boolean includeInInventory;
+    private Boolean redstoneRequired;
+    private Boolean exactItem;
 
     public TEKeeper() {
         itemStacks = new ItemStack[NUMBER_OF_SLOTS];
@@ -42,6 +46,22 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable {
 
     public void setIncludeInInventory(boolean value){
         includeInInventory = value;
+    }
+
+    public boolean isRedstoneRequired() {
+        return redstoneRequired;
+    }
+
+    public boolean isExactItem() {
+        return exactItem;
+    }
+
+    public void setExactItem(boolean value){
+        exactItem = value;
+    }
+
+    public void setRedstoneRequired(boolean value){
+        redstoneRequired = value;
     }
 
     @Override
@@ -164,6 +184,7 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable {
         super.writeToNBT(parentNBTTagCompound);
 
         if(coreLocation == null){
+            ThingsOfNaturalEnergies.logger.error("Writing to null");
             return parentNBTTagCompound;
         }
 
@@ -186,6 +207,9 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable {
         parentNBTTagCompound.setTag("Items", dataForAllSlots);
 
         parentNBTTagCompound.setBoolean("IncludeInventory", includeInInventory);
+        parentNBTTagCompound.setBoolean("ExactItem", exactItem);
+        parentNBTTagCompound.setBoolean("RedstoneOn", redstoneRequired);
+        ThingsOfNaturalEnergies.logger.error("Setting redstoneOn to " + redstoneRequired);
 
         // return the NBT Tag Compound
         return parentNBTTagCompound;
@@ -228,6 +252,9 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable {
         }
 
         includeInInventory = parentNBTTagCompound.getBoolean("IncludeInventory");
+        exactItem = parentNBTTagCompound.getBoolean("ExactItem");
+        redstoneRequired = parentNBTTagCompound.getBoolean("RedstoneOn");
+        ThingsOfNaturalEnergies.logger.error("Reading in redstone " + redstoneRequired);
     }
 
     @Override
@@ -243,5 +270,35 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable {
     @Override
     public InteractableType getType() {
         return InteractableType.KEEPER;
+    }
+
+    @Override
+    public void update() {
+        if(world.isRemote) return;
+
+        if(redstoneRequired){
+            // Only function if this block is powered
+            if(world.getStrongPower(pos) < 13){
+                return;
+            }
+            ThingsOfNaturalEnergies.logger.error("Redstone powered");
+        }
+    }
+
+    @Override
+    public NBTTagCompound getSyncable() {
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setBoolean("include", includeInInventory);
+        tag.setBoolean("exact", exactItem);
+        tag.setBoolean("redstone", redstoneRequired);
+        return tag;
+    }
+
+    @Override
+    public void doSync(NBTTagCompound fromClient) {
+        includeInInventory = fromClient.getBoolean("include");
+        exactItem = fromClient.getBoolean("exact");
+        redstoneRequired = fromClient.getBoolean("redstone");
+        ThingsOfNaturalEnergies.logger.error("Updating info to have redstone: " + redstoneRequired);
     }
 }
