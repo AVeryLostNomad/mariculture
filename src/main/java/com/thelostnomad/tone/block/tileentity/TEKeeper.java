@@ -9,12 +9,20 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraftforge.items.ItemStackHandler;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class TEKeeper extends TileEntity implements IInventory, IInteractable, ITickable, SyncableTileEntity {
+public class TEKeeper extends TileEntity implements IInventory, IInteractable, ITickable, SyncableTileEntity, ICapabilityProvider {
 
     public static final String NAME = "tone_keeper_tileentity";
     private BlockPos coreLocation = null;
@@ -25,6 +33,72 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
     private Boolean includeInInventory;
     private Boolean redstoneRequired;
     private Boolean exactItem;
+
+    // Anything calling this should only be trying to interact with the rightmost slot. Nothing more
+    private ItemStackHandler inventory = new ItemStackHandler(){
+        @Override
+        public void setStackInSlot(int slot, @Nonnull ItemStack stack)
+        {
+            if(stack.isEmpty()) {
+                TEKeeper.this.setInventorySlotContents(37, stack);
+            }
+        }
+
+        @Override
+        public int getSlots(){
+            return 1;
+        }
+
+        @Override
+        @Nonnull
+        public ItemStack getStackInSlot(int slot)
+        {
+            return TEKeeper.this.getStackInSlot(37);
+        }
+
+        @Override
+        @Nonnull
+        public ItemStack insertItem(int slot, @Nonnull ItemStack stack, boolean simulate)
+        {
+            if (stack.isEmpty())
+                return ItemStack.EMPTY;
+
+            return stack; // Nothing goes in to a keeper.
+        }
+
+        @Override
+        @Nonnull
+        public ItemStack extractItem(int slot, int amount, boolean simulate)
+        {
+            if (amount == 0)
+                return ItemStack.EMPTY;
+
+            ItemStack existing = TEKeeper.this.getStackInSlot(37);
+
+            if (existing.isEmpty())
+                return ItemStack.EMPTY;
+
+            int toExtract = Math.min(amount, existing.getMaxStackSize());
+
+            if (existing.getCount() <= toExtract)
+            {
+                if (!simulate)
+                {
+                    setStackInSlot(slot, ItemStack.EMPTY);
+                }
+                return existing;
+            }
+            else
+            {
+                if (!simulate)
+                {
+                    setStackInSlot(slot, ItemHandlerHelper.copyStackWithSize(existing, existing.getCount() - toExtract));
+                }
+
+                return ItemHandlerHelper.copyStackWithSize(existing, toExtract);
+            }
+        }
+    };
 
     public TEKeeper() {
         itemStacks = new ItemStack[NUMBER_OF_SLOTS];
@@ -344,5 +418,16 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
         exactItem = fromClient.getBoolean("exact");
         redstoneRequired = fromClient.getBoolean("redstone");
         ThingsOfNaturalEnergies.logger.error("Updating info to have redstone: " + redstoneRequired);
+    }
+
+    @Override
+    public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
+        return capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
+    }
+
+    @Nullable
+    @Override
+    public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
+        return capability == CapabilityItemHandler.ITEM_HANDLER_CAPABILITY ? (T)inventory : super.getCapability(capability, facing);
     }
 }
