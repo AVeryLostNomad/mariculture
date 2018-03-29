@@ -124,7 +124,7 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
     // inserting items via the gui
     @Override
     public int getInventoryStackLimit() {
-        return 1;
+        return 64;
     }
 
     @Override
@@ -156,7 +156,7 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
         final double X_CENTRE_OFFSET = 0.5;
         final double Y_CENTRE_OFFSET = 0.5;
         final double Z_CENTRE_OFFSET = 0.5;
-        final double MAXIMUM_DISTANCE_SQ = 8.0 * 8.0;
+        final double MAXIMUM_DISTANCE_SQ = 5.0 * 5.0;
         return player.getDistanceSq(pos.getX() + X_CENTRE_OFFSET, pos.getY() + Y_CENTRE_OFFSET, pos.getZ() + Z_CENTRE_OFFSET) < MAXIMUM_DISTANCE_SQ;
     }
 
@@ -262,6 +262,14 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
         return NAME;
     }
 
+    public ItemStack getOutCopy(){
+        return itemStacks[1].copy();
+    }
+
+    public ItemStack getInCopy(){
+        return itemStacks[0].copy();
+    }
+
     @Override
     public boolean hasCustomName() {
         return false;
@@ -281,13 +289,42 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
             if(world.getStrongPower(pos) < 13){
                 return;
             }
-            ThingsOfNaturalEnergies.logger.error("Redstone powered");
+        }
+
+        TileEntity coreTE = world.getTileEntity(coreLocation);
+        if(coreTE != null){
+            TESentientTreeCore core = (TESentientTreeCore) coreTE;
+
+            if(getOutCopy().isEmpty() && !getInCopy().isEmpty()){
+                // We don't already have an item in our target slot
+                // See if we can just grabbomundo
+                ItemStack toFetch = getInCopy();
+
+                boolean result = core.canGetItemstackOut(toFetch, this.exactItem, true);
+                if(result){
+                    setInventorySlotContents(37, core.getItemstackOut(toFetch, this.exactItem, true));
+                }else{
+                    // We can't quite extract this item, maybe we can craft it?
+                    boolean attempt = core.autocraftIfPossible(Arrays.asList(new ItemStack[]{toFetch}));
+                    if(attempt){
+                        setInventorySlotContents(37, core.getItemstackOut(toFetch, this.exactItem, true));
+                    }
+                }
+            }
         }
     }
 
     @Override
     public NBTTagCompound getSyncable() {
         NBTTagCompound tag = new NBTTagCompound();
+        tag.setString("key", "keeper");
+
+        NBTTagCompound blockPosNBT = new NBTTagCompound();        // NBTTagCompound is similar to a Java HashMap
+        blockPosNBT.setInteger("x", pos.getX());
+        blockPosNBT.setInteger("y", pos.getY());
+        blockPosNBT.setInteger("z", pos.getZ());
+        tag.setTag("location", blockPosNBT);
+
         tag.setBoolean("include", includeInInventory);
         tag.setBoolean("exact", exactItem);
         tag.setBoolean("redstone", redstoneRequired);
@@ -296,6 +333,13 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
 
     @Override
     public void doSync(NBTTagCompound fromClient) {
+        if(!fromClient.getString("key").equals("keeper")) return;
+
+        NBTTagCompound coreLoc = fromClient.getCompoundTag("location");
+        BlockPos loc = new BlockPos(coreLoc.getInteger("x"),
+                    coreLoc.getInteger("y"), coreLoc.getInteger("z"));
+        if(!loc.equals(pos)) return;
+
         includeInInventory = fromClient.getBoolean("include");
         exactItem = fromClient.getBoolean("exact");
         redstoneRequired = fromClient.getBoolean("redstone");

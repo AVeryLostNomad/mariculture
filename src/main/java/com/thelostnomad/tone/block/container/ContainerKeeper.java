@@ -1,10 +1,12 @@
 package com.thelostnomad.tone.block.container;
 
+import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TEKeeper;
 import com.thelostnomad.tone.util.gui.SyncableContainer;
 import com.thelostnomad.tone.util.gui.SyncableTileEntity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.ClickType;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -68,6 +70,15 @@ public class ContainerKeeper extends Container implements SyncableContainer{
         return teKeeper;
     }
 
+    public ItemStack slotClick(int slotId, int dragType, ClickType clickTypeIn, EntityPlayer player)
+    {
+        if((!player.inventory.getItemStack().isEmpty()) && slotId == 37){
+            return ItemStack.EMPTY; //You cannot drop or swap items into slot 37.
+        }else{
+            return super.slotClick(slotId, dragType, clickTypeIn, player);
+        }
+    }
+
     // Vanilla calls this method every tick to make sure the player is still able to access the inventory, and if not closes the gui
     @Override
     public boolean canInteractWith(EntityPlayer player)
@@ -93,7 +104,8 @@ public class ContainerKeeper extends Container implements SyncableContainer{
         // Check if the slot clicked is one of the vanilla container slots
         if (sourceSlotIndex >= VANILLA_FIRST_SLOT_INDEX && sourceSlotIndex < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
             // This is a vanilla container slot so merge the stack into the tile inventory
-            if (!mergeItemStack(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false)){
+            // We can only put it into the first slot though, keep that in mind.
+            if (!mergeItemStack(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false)){
                 return ItemStack.EMPTY;  // EMPTY_ITEM
             }
         } else if (sourceSlotIndex >= TE_INVENTORY_FIRST_SLOT_INDEX && sourceSlotIndex < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
@@ -102,7 +114,6 @@ public class ContainerKeeper extends Container implements SyncableContainer{
                 return ItemStack.EMPTY;   // EMPTY_ITEM
             }
         } else {
-            System.err.print("Invalid slotIndex:" + sourceSlotIndex);
             return ItemStack.EMPTY;   // EMPTY_ITEM
         }
 

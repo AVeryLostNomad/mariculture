@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import org.lwjgl.input.Keyboard;
 
@@ -140,6 +141,13 @@ public class GuiKeeper extends GuiContainer implements SyncableGui {
 
     @Override
     public void doSync(NBTTagCompound fromServer) {
+        if(!fromServer.getString("key").equals("keeper")) return;
+
+        NBTTagCompound coreLoc = fromServer.getCompoundTag("location");
+        BlockPos loc = new BlockPos(coreLoc.getInteger("x"),
+                coreLoc.getInteger("y"), coreLoc.getInteger("z"));
+        if(!loc.equals(tileEntityKeeper.getPos())) return;
+
         includeInInventory.setIsChecked(fromServer.getBoolean("include"));
         exactItem.setIsChecked(fromServer.getBoolean("exact"));
         redstoneOn.setIsChecked(fromServer.getBoolean("redstone"));

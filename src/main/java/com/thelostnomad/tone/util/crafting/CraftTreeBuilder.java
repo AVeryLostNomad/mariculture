@@ -163,7 +163,7 @@ public class CraftTreeBuilder {
     public static List<DirectionalItemStack> findProcessToMake(ItemStack target, List<ItemStack> inventory){
         InventoryWrapper wrap = new InventoryWrapper(inventory);
 
-        RecipeBranch baseBranch = new RecipeBranch(null, target, 0, 1);
+        RecipeBranch baseBranch = new RecipeBranch(null, target, 0, target.getCount());
 
         //printAllRecipeBranches(baseBranch);
 

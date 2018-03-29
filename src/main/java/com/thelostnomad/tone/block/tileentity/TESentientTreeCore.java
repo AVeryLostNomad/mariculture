@@ -363,6 +363,148 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return false;
     }
 
+    // Updated method to see if we can pull an itemstack out of inventories in this tree network
+    public boolean canGetItemstackOut(ItemStack toFetch, boolean exact, boolean ignoreKeepers){
+        int remaining = toFetch.getCount(); // We need to reduce this to zero in order to return the desired stack.
+
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
+            if(te.getType() != IInteractable.InteractableType.STORAGE){
+                if(ignoreKeepers) continue;
+                if(te.getType() != IInteractable.InteractableType.KEEPER) continue;
+
+                // We have a keeper. We should validate this inventory
+                TEKeeper keeper = (TEKeeper)te;
+                if(keeper.isIncludeInInventory()){
+                    // Do check this inventory
+                    ItemStack stack = keeper.getOutCopy();
+                    if(exact){
+                        // NBT comparison
+                        if(StackUtil.stacksEqual(stack, toFetch)){
+                            if(stack.getCount() >= remaining){
+                                remaining = 0;
+                                break;
+                            }
+                            remaining -= stack.getCount();
+                        }
+                    }else{
+                        if(StackUtil.stacksShallowEqual(stack, toFetch)){
+                            if(stack.getCount() >= remaining){
+                                remaining = 0;
+                                break;
+                            }
+                            remaining -= stack.getCount();
+                        }
+                    }
+                }
+                continue;
+            }
+            TEStorageHollow teStorageHollow = (TEStorageHollow) te;
+            for (ItemStack stack : teStorageHollow.getItemStacks()) {
+                if(exact){
+                    // NBT comparison
+                    if(StackUtil.stacksEqual(stack, toFetch)){
+                        if(stack.getCount() >= remaining){
+                            remaining = 0;
+                            break;
+                        }
+                        remaining -= stack.getCount();
+                    }
+                }else{
+                    if(StackUtil.stacksShallowEqual(stack, toFetch)){
+                        if(stack.getCount() >= remaining){
+                            remaining = 0;
+                            break;
+                        }
+                        remaining -= stack.getCount();
+                    }
+                }
+            }
+        }
+
+        if(remaining != 0){
+            return false;
+        }
+
+        return true;
+    }
+
+    public ItemStack getItemstackOut(ItemStack toFetch, boolean exact, boolean ignoreKeepers){
+        int remaining = toFetch.getCount(); // We need to reduce this to zero in order to return the desired stack.
+
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
+            if(te.getType() != IInteractable.InteractableType.STORAGE){
+                if(ignoreKeepers) continue;
+                if(te.getType() != IInteractable.InteractableType.KEEPER) continue;
+
+                // We have a keeper. We should validate this inventory
+                TEKeeper keeper = (TEKeeper)te;
+                if(keeper.isIncludeInInventory()){
+                    // Do check this inventory
+                    ItemStack stack = keeper.getOutCopy();
+                    if(exact){
+                        // NBT comparison
+                        if(StackUtil.stacksEqual(stack, toFetch)){
+                            if(stack.getCount() >= remaining){
+                                keeper.decrStackSize(37, remaining);
+                                remaining = 0;
+                                break;
+                            }
+                            remaining -= stack.getCount();
+                            keeper.setInventorySlotContents(37, ItemStack.EMPTY);
+                        }
+                    }else{
+                        if(StackUtil.stacksShallowEqual(stack, toFetch)){
+                            if(stack.getCount() >= remaining){
+                                keeper.decrStackSize(37, remaining);
+                                remaining = 0;
+                                break;
+                            }
+                            remaining -= stack.getCount();
+                            keeper.setInventorySlotContents(37, ItemStack.EMPTY);
+                        }
+                    }
+                }
+                continue;
+            }
+            TEStorageHollow teStorageHollow = (TEStorageHollow) te;
+            for(int slot = 0; slot < teStorageHollow.getCapacity(); slot++) {
+                ItemStack stack = teStorageHollow.getStackInSlot(slot);
+                if(exact){
+                    // NBT comparison
+                    if(StackUtil.stacksEqual(stack, toFetch)){
+                        if(stack.getCount() >= remaining){
+                            teStorageHollow.decrStackSize(slot, remaining);
+                            remaining = 0;
+                            break;
+                        }
+                        remaining -= stack.getCount();
+                        teStorageHollow.setInventorySlotContents(slot, ItemStack.EMPTY);
+                    }
+                }else{
+                    if(StackUtil.stacksShallowEqual(stack, toFetch)){
+                        if(stack.getCount() >= remaining){
+                            teStorageHollow.decrStackSize(slot, remaining);
+                            remaining = 0;
+                            break;
+                        }
+                        remaining -= stack.getCount();
+                        teStorageHollow.setInventorySlotContents(slot, ItemStack.EMPTY);
+                    }
+                }
+            }
+        }
+
+        if(remaining != 0){
+            return null;
+        }
+
+        return toFetch.copy();
+    }
+
     public ItemStack getFirstItemstackFromInventoryMatching(ItemStack toGet) {
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
@@ -905,12 +1047,14 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             for (CraftTreeBuilder.DirectionalItemStack dir : directionalItemStacks) {
                 if (dir.isAdd()) {
                     // Add an item to this block
+
                     storeItemInFirstOpenSlot(dir.getStack());
                 } else {
                     tryRemoveItemFromInventory(dir.getStack());
                 }
             }
             ItemStack result = is.copy();
+            ThingsOfNaturalEnergies.logger.error("The stack has " + result.getCount() + " items in it");
             storeItemInFirstOpenSlot(result);
             alreadyHave = allItemsInStorage();
             return true;
@@ -1184,7 +1328,17 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         int totalCount = 0;
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
-            if (te.getType() != IInteractable.InteractableType.STORAGE) continue;
+            if (te.getType() != IInteractable.InteractableType.STORAGE){
+                if(te.getType() == IInteractable.InteractableType.KEEPER){
+                    // This keeper might be worth including.
+                    TEKeeper keeper = (TEKeeper) te;
+                    if(keeper.isIncludeInInventory()){
+                        // We should include it!
+                        totalCount += 1;
+                    }
+                }
+                continue;
+            }
             TEStorageHollow storageHollow = (TEStorageHollow) te;
             totalCount += storageHollow.getSizeInventory();
         }
@@ -1202,6 +1356,19 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                 }else{
                     return storageHollow.getStackInSlot(desiredSlot);
                 }
+            }else{
+                if(te.getType() == IInteractable.InteractableType.KEEPER){
+                    TEKeeper keeper = (TEKeeper) te;
+                    if(keeper.isIncludeInInventory()){
+                        // We should include it!
+                        if(desiredSlot > 0){
+                            desiredSlot -= 1;
+                            continue;
+                        }else{
+                            return ((TEKeeper) te).getStackInSlot(37);
+                        }
+                    }
+                }
             }
         }
         return ItemStack.EMPTY;
@@ -1217,6 +1384,18 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     continue;
                 }else{
                     return storageHollow.decrStackSize(desiredSlot, count);
+                }
+            }else{
+                if(te.getType() == IInteractable.InteractableType.KEEPER){
+                    TEKeeper keeper = (TEKeeper) te;
+                    if(keeper.isIncludeInInventory()) {
+                        if (desiredSlot > 0) {
+                            desiredSlot -= 1;
+                            continue;
+                        } else {
+                            return ((TEKeeper) te).decrStackSize(37, count);
+                        }
+                    }
                 }
             }
         }
@@ -1234,9 +1413,51 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                 }else{
                     return storageHollow.removeStackFromSlot(desiredSlot);
                 }
+            }else{
+                if(te.getType() == IInteractable.InteractableType.KEEPER){
+                    TEKeeper keeper = (TEKeeper) te;
+                    if(keeper.isIncludeInInventory()) {
+                        if (desiredSlot > 0) {
+                            desiredSlot -= 1;
+                            continue;
+                        } else {
+                            return ((TEKeeper) te).removeStackFromSlot(37);
+                        }
+                    }
+                }
             }
         }
         return ItemStack.EMPTY;
+    }
+
+    public int overallStackMax(int desiredSlot, ItemStack stack){
+        for (BlockPos storage : interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te.getType() == IInteractable.InteractableType.STORAGE){
+                TEStorageHollow storageHollow = (TEStorageHollow) te;
+                if(desiredSlot >= storageHollow.getCapacity()){
+                    desiredSlot -= storageHollow.getCapacity();
+                    continue;
+                }else{
+                    return storageHollow.getInventoryStackLimit();
+                }
+            }else{
+                if(te.getType() == IInteractable.InteractableType.KEEPER){
+                    TEKeeper keeper = (TEKeeper) te;
+                    if(keeper.isIncludeInInventory()) {
+                        if (desiredSlot > 0) {
+                            desiredSlot -= 1;
+                            continue;
+                        } else {
+                            // We do actually want to put it right here.
+                            // We can't do that, though
+                            return 0;
+                        }
+                    }
+                }
+            }
+        }
+        return -1; // Unimplemented
     }
 
     public void overallSetContents(int desiredSlot, ItemStack stack){
@@ -1249,6 +1470,25 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     continue;
                 }else{
                     storageHollow.setInventorySlotContents(desiredSlot, stack);
+                }
+            }else{
+                if(te.getType() == IInteractable.InteractableType.KEEPER){
+
+                    TEKeeper keeper = (TEKeeper) te;
+                    if(keeper.isIncludeInInventory()) {
+                        if (desiredSlot > 0) {
+                            desiredSlot -= 1;
+                            continue;
+                        } else {
+                            if (stack.isEmpty()) {
+                                // We can set this to empty, sure
+                                ((TEKeeper) te).setInventorySlotContents(37, ItemStack.EMPTY);
+                            }
+                            // We do actually want to put it right here.
+                            // We can't do that, though
+                            return;
+                        }
+                    }
                 }
             }
         }

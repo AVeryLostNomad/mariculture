@@ -4,13 +4,20 @@ import com.thelostnomad.tone.integration.IToneIntegration;
 import com.thelostnomad.tone.network.TonePacketHandler;
 import com.thelostnomad.tone.proxy.CommonProxy;
 import com.thelostnomad.tone.util.crafting.CraftTreeBuilder;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraft.launchwrapper.Launch;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Mod(modid = ThingsOfNaturalEnergies.MODID, name = ThingsOfNaturalEnergies.MODNAME, version = ThingsOfNaturalEnergies.VERSION, useMetadata = true, dependencies="before:guideapi")
 public class ThingsOfNaturalEnergies {
@@ -59,20 +66,17 @@ public class ThingsOfNaturalEnergies {
         }
 
         CraftTreeBuilder.loadRecipes();
-
-//        List<ItemStack> inv = new ArrayList<ItemStack>();
-//        inv.add(new ItemStack(Items.REEDS, 9));
-//        inv.add(new ItemStack(Blocks.REDSTONE_BLOCK, 2));
-//        inv.add(new ItemStack(Blocks.IRON_BLOCK, 2));
-//        inv.add(new ItemStack(Blocks.OBSIDIAN, 5));
-//        inv.add(new ItemStack(Blocks.DIAMOND_BLOCK, 2));
-//        inv.add(new ItemStack(Items.LEATHER, 4));
 //
-//        List<CraftTreeBuilder.DirectionalItemStack> dir = CraftTreeBuilder.findProcessToMake(new ItemStack(Items.IRON_INGOT, 1), inv);
+//        List<ItemStack> inv = new ArrayList<ItemStack>();
+//        inv.add(new ItemStack(Blocks.PLANKS, 2));
+//
+//        List<CraftTreeBuilder.DirectionalItemStack> dir = CraftTreeBuilder.findProcessToMake(new ItemStack(Items.STICK, 4), inv);
 //        if(dir != null){
 //            for(CraftTreeBuilder.DirectionalItemStack d : dir){
 //                ThingsOfNaturalEnergies.logger.error(d.getStack().getDisplayName() + (d.isAdd() ? " +":" -") + d.getStack().getCount());
 //            }
+//        }else{
+//            ThingsOfNaturalEnergies.logger.error("Can't craft");
 //        }
 //        FMLCommonHandler.instance().exitJava(0, true);
 //
