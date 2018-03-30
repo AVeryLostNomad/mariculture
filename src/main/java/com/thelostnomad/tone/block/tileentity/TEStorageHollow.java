@@ -1,5 +1,6 @@
 package com.thelostnomad.tone.block.tileentity;
 
+import com.thelostnomad.tone.util.crafting.StackUtil;
 import com.thelostnomad.tone.util.world.IInteractable;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -14,6 +15,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
+import net.minecraftforge.items.ItemHandlerHelper;
 
 import java.util.Arrays;
 
@@ -84,40 +86,121 @@ public class TEStorageHollow extends TileEntity implements IInventory, IInteract
         return total;
     }
 
-    public synchronized boolean canAddItem(ItemStack stack){
-        boolean found = false;
-        for (ItemStack i : itemStacks) {
-            if (i.isEmpty()) continue;
-            if (i.getItem() == stack.getItem()) {
-                // We can go ahead and put this here.
-                if ((i.getCount() + stack.getCount()) >= this.getInventoryStackLimit()) continue;
-                found = true;
-                return true;
+    /**
+     * Can this single storage hollow fit the {@code stack}?
+     * Will attempt to fit it into existing stacks before creating new ones.
+     * @param stack The itemstack to fit
+     * @return ItemStack leftover items
+     */
+    public synchronized ItemStack canFit(ItemStack stack){
+        int leftToFit = stack.getCount();
+
+        // First go through and see if we can fit it in an existing stack.
+        for(ItemStack i : itemStacks){
+            if(StackUtil.stacksEqual(stack, i)){
+                // The same
+                int total = i.getCount() + stack.getCount();
+                if(total >= this.getInventoryStackLimit()){
+                    // Too many items here.
+                    leftToFit = total - this.getInventoryStackLimit();
+                    // In the actual fit, we would go ahead and set this slot to max size.
+                }else{
+                    // This one can fit the item
+                    // In the actual fit we would go ahead and set this slot to the total
+                    leftToFit = 0;
+                    break;
+                }
             }
         }
-        if(!found && (this.getFilled() != this.getCapacity())){
-            return true;
+
+        if(leftToFit == 0){
+            // This hollow can fit all of the items
+            // and it can do it without creating new stacks
+            return ItemStack.EMPTY;
         }
-        return false;
+
+        int nowFilled = this.getFilled();
+        int cap = this.getCapacity();
+        while((nowFilled != cap) && leftToFit != 0){
+            // We can make new slots, potentially multiple
+            if(leftToFit >= this.getInventoryStackLimit()){
+                // We have a full stack
+                // In the actual, create a new stack at itemStacks[nowFilled]
+                leftToFit -= this.getInventoryStackLimit();
+                nowFilled++;
+            }else{
+                // Make one new stack with this amount, then break
+                leftToFit = 0;
+                nowFilled++;
+            }
+        }
+
+        if(leftToFit == 0){
+            return ItemStack.EMPTY;
+        }
+
+        return ItemHandlerHelper.copyStackWithSize(stack, leftToFit);
     }
 
-    public synchronized boolean addItem(ItemStack stack) {
-        boolean found = false;
-        for (ItemStack i : itemStacks) {
-            if (i.isEmpty()) continue;
-            if (i.getItem() == stack.getItem()) {
-                // We can go ahead and put this here.
-                if ((i.getCount() + stack.getCount()) >= this.getInventoryStackLimit()) continue;
-                found = true;
-                i.setCount(i.getCount() + stack.getCount());
-                return true;
+    /**
+     * Attempt to fit a stack into this hollow
+     * Will attempt to fit it into existing stacks before creating new ones.
+     * Designed to be run after {@link #canFit(ItemStack)}
+     * @param stack The itemstack to fit
+     * @return ItemStack leftover items
+     */
+    public synchronized ItemStack doFit(ItemStack stack){
+        int leftToFit = stack.getCount();
+
+        // First go through and see if we can fit it in an existing stack.
+        for(ItemStack i : itemStacks){
+            if(StackUtil.stacksEqual(stack, i)){
+                // The same
+                int total = i.getCount() + stack.getCount();
+                if(total >= this.getInventoryStackLimit()){
+                    // Too many items here.
+                    leftToFit = total - this.getInventoryStackLimit();
+                    // In the actual fit, we would go ahead and set this slot to max size.
+                    i.setCount(this.getInventoryStackLimit());
+                }else{
+                    // This one can fit the item
+                    // In the actual fit we would go ahead and set this slot to the total
+                    i.setCount(total);
+                    leftToFit = 0;
+                    break;
+                }
             }
         }
-        if(!found && (this.getFilled() != this.getCapacity())){
-            setInventorySlotContents(this.getFilled(), stack);
-            return true;
+
+        if(leftToFit == 0){
+            // This hollow can fit all of the items
+            // and it can do it without creating new stacks
+            return ItemStack.EMPTY;
         }
-        return false;
+
+        int nowFilled = this.getFilled();
+        int cap = this.getCapacity();
+        while((nowFilled != cap) && leftToFit != 0){
+            // We can make new slots, potentially multiple
+            if(leftToFit >= this.getInventoryStackLimit()){
+                // We have a full stack
+                // In the actual, create a new stack at itemStacks[nowFilled]
+                itemStacks[nowFilled] = ItemHandlerHelper.copyStackWithSize(stack, this.getInventoryStackLimit());
+                leftToFit -= this.getInventoryStackLimit();
+                nowFilled++;
+            }else{
+                // Make one new stack with this amount, then break
+                itemStacks[nowFilled] = ItemHandlerHelper.copyStackWithSize(stack, leftToFit);
+                leftToFit = 0;
+                nowFilled++;
+            }
+        }
+
+        if(leftToFit == 0){
+            return ItemStack.EMPTY;
+        }
+
+        return ItemHandlerHelper.copyStackWithSize(stack, leftToFit);
     }
 
     @Override

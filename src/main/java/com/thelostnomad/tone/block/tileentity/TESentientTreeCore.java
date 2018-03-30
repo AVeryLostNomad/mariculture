@@ -564,7 +564,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if (teStorageHollow.canAddItem(stack)) {
+            if (teStorageHollow.canFit(stack) == ItemStack.EMPTY) {
                 return true;
             }
         }
@@ -577,7 +577,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if (teStorageHollow.addItem(stack)) {
+            if (teStorageHollow.doFit(stack) == ItemStack.EMPTY) {
                 return true;
             }
         }
@@ -1342,7 +1342,6 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             TEStorageHollow storageHollow = (TEStorageHollow) te;
             totalCount += storageHollow.getSizeInventory();
         }
-        ThingsOfNaturalEnergies.logger.error("We have " + totalCount + " slots");
         return totalCount;
     }
 
@@ -1471,6 +1470,8 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     continue;
                 }else{
                     storageHollow.setInventorySlotContents(desiredSlot, stack);
+                    ThingsOfNaturalEnergies.logger.error("Setting at pos " + storageHollow.getPos().toString() + " with " + stack.getDisplayName() + "x " + stack.getCount());
+                    return;
                 }
             }else{
                 if(te.getType() == IInteractable.InteractableType.KEEPER){
@@ -1484,6 +1485,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                             if (stack.isEmpty()) {
                                 // We can set this to empty, sure
                                 ((TEKeeper) te).setInventorySlotContents(37, ItemStack.EMPTY);
+                                return;
                             }
                             // We do actually want to put it right here.
                             // We can't do that, though
