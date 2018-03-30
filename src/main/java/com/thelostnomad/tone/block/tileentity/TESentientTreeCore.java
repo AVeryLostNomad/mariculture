@@ -1342,6 +1342,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             TEStorageHollow storageHollow = (TEStorageHollow) te;
             totalCount += storageHollow.getSizeInventory();
         }
+        ThingsOfNaturalEnergies.logger.error("We have " + totalCount + " slots");
         return totalCount;
     }
 

@@ -71,39 +71,25 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
             if (stack.isEmpty())
                 return ItemStack.EMPTY;
 
-            ItemStack existing = getCore().getOverallStackInSlot(slot);
-
-            int limit = getCore().overallStackMax(slot, stack);
-
-            if (!existing.isEmpty())
-            {
-                if(limit == 0) return stack; // Even if we normally would be able to merge. We can't if it's a keeper.
-
-                if (!ItemHandlerHelper.canItemStacksStack(stack, existing))
+            if(simulate){
+                // We are just testing this guy
+                boolean canFit = getCore().canFitItem(stack);
+                if(canFit){
+                    return ItemStack.EMPTY;
+                }else{
+                    // TODO get leftovers here
                     return stack;
-
-                limit -= existing.getCount();
-            }
-
-            if (limit <= 0) // No keeper merge
-                return stack;
-
-            boolean reachedLimit = stack.getCount() > limit;
-
-            if (!simulate)
-            {
-                if (existing.isEmpty())
-                {
-                    setStackInSlot(slot, reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, limit) : stack);
                 }
-                else
-                {
-                    existing.grow(reachedLimit ? limit : stack.getCount());
+            }else{
+                boolean canFit = getCore().canFitItem(stack);
+                if(canFit){
+                    getCore().storeItemInFirstOpenSlot(stack);
+                    return ItemStack.EMPTY;
+                }else{
+                    // TODO get leftovers here
+                    return stack;
                 }
-                onContentsChanged(slot);
             }
-
-            return reachedLimit ? ItemHandlerHelper.copyStackWithSize(stack, stack.getCount()- limit) : ItemStack.EMPTY;
         }
 
         @Override

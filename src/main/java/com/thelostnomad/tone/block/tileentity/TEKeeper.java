@@ -115,7 +115,7 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
     }
 
     public boolean isIncludeInInventory() {
-        return includeInInventory;
+        return includeInInventory == null ? false : includeInInventory;
     }
 
     public void setIncludeInInventory(boolean value){
@@ -123,11 +123,11 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
     }
 
     public boolean isRedstoneRequired() {
-        return redstoneRequired;
+        return redstoneRequired == null ? false : redstoneRequired;
     }
 
     public boolean isExactItem() {
-        return exactItem;
+        return exactItem == null ? false : exactItem;
     }
 
     public void setExactItem(boolean value){
@@ -280,6 +280,13 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
         // the array of hashmaps is then inserted into the parent hashmap for the container
         parentNBTTagCompound.setTag("Items", dataForAllSlots);
 
+        if(includeInInventory == null){
+            // We likely haven't loaded any. Presume false
+            includeInInventory = false;
+            exactItem = false;
+            redstoneRequired = false;
+        }
+
         parentNBTTagCompound.setBoolean("IncludeInventory", includeInInventory);
         parentNBTTagCompound.setBoolean("ExactItem", exactItem);
         parentNBTTagCompound.setBoolean("RedstoneOn", redstoneRequired);
@@ -358,7 +365,7 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
     public void update() {
         if(world.isRemote) return;
 
-        if(redstoneRequired){
+        if(isRedstoneRequired()){
             // Only function if this block is powered
             if(world.getStrongPower(pos) < 13){
                 return;
