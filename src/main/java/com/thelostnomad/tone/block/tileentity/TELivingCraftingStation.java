@@ -66,10 +66,12 @@ public class TELivingCraftingStation extends TileEntity implements IInventory {
                 }
                 core = (TESentientTreeCore) world.getTileEntity(coreLocation);
             }
-            boolean result = core.storeItemInFirstOpenSlot(oldStack);
-            if(!result){
+            ItemStack result = core.canFitItem(oldStack);
+            if(result != ItemStack.EMPTY){
+                // We can't actually fit the item
                 return false;
             }
+            core.doFitItem(oldStack);
             return true;
         }
         if(slot == 11){

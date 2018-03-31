@@ -73,21 +73,21 @@ public class TELivingEnergisticInterface extends TileEntity implements IGridHost
 
             if(simulate){
                 // We are just testing this guy
-                boolean canFit = getCore().canFitItem(stack);
-                if(canFit){
+                ItemStack left = getCore().canFitItem(stack);
+
+                if(left == ItemStack.EMPTY){
                     return ItemStack.EMPTY;
                 }else{
-                    // TODO get leftovers here
-                    return stack;
+                    return left;
                 }
             }else{
-                boolean canFit = getCore().canFitItem(stack);
-                if(canFit){
-                    getCore().storeItemInFirstOpenSlot(stack);
+                ItemStack left = getCore().canFitItem(stack);
+                getCore().doFitItem(stack);
+
+                if(left == ItemStack.EMPTY){
                     return ItemStack.EMPTY;
                 }else{
-                    // TODO get leftovers here
-                    return stack;
+                    return left;
                 }
             }
         }

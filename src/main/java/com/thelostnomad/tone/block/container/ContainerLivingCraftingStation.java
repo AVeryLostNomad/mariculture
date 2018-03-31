@@ -84,10 +84,12 @@ public class ContainerLivingCraftingStation extends Container {
             ItemStack stack = this.craftMatrix.getStackInSlot(i);
             if (stack != null) {
                 TESentientTreeCore core = (TESentientTreeCore) lcs.getWorld().getTileEntity(lcs.getCoreLocation());
-                boolean result = core.storeItemInFirstOpenSlot(stack);
+                ItemStack result = core.canFitItem(stack);
                 this.craftMatrix.setInventorySlotContents(i, ItemStack.EMPTY);
-                if (!result) {
+                if (result != ItemStack.EMPTY) {
                     playerIn.dropItem(stack, false);
+                }else{
+                    core.doFitItem(stack);
                 }
             }
         }

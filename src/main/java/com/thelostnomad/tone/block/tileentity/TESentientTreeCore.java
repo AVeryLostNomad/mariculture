@@ -16,6 +16,7 @@ import com.thelostnomad.tone.util.TreeUtil;
 import com.thelostnomad.tone.util.crafting.CraftTreeBuilder;
 import com.thelostnomad.tone.util.crafting.StackUtil;
 import com.thelostnomad.tone.util.world.IInteractable;
+import mezz.jei.gui.CraftingGridHelper;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.init.SoundEvents;
@@ -37,6 +38,7 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import scala.actors.threadpool.Arrays;
 
 import javax.annotation.Nullable;
@@ -558,30 +560,73 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         return false;
     }
 
-    public boolean canFitItem(ItemStack stack){
+    /**
+     * Checks whether the various storage hollows attached to this block can fit this itemstack
+     * @param stack The stack to check
+     * @return Leftover itemstack
+     */
+    public ItemStack canFitItem(ItemStack stack){
+        int amtToFit = stack.getCount();
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
             if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if (teStorageHollow.canFit(stack) == ItemStack.EMPTY) {
-                return true;
+
+            ItemStack toTest = ItemHandlerHelper.copyStackWithSize(stack, amtToFit);
+
+            toTest = teStorageHollow.canFit(toTest);
+
+            if (toTest == ItemStack.EMPTY) {
+                // We fit the whole stack
+                return ItemStack.EMPTY;
+            }else{
+                amtToFit = toTest.getCount(); // The remaining amount
             }
         }
-        return false;
+        return ItemHandlerHelper.copyStackWithSize(stack, amtToFit);
     }
 
-    public boolean storeItemInFirstOpenSlot(ItemStack stack) {
+    public ItemStack doFitItem(ItemStack stack){
+        int amtToFit = stack.getCount();
         for (BlockPos bp : this.interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(bp);
             if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
-            if (teStorageHollow.doFit(stack) == ItemStack.EMPTY) {
-                return true;
+
+            ItemStack toTest = ItemHandlerHelper.copyStackWithSize(stack, amtToFit);
+            toTest = teStorageHollow.doFitNoNewStacks(toTest);
+
+            if (toTest == ItemStack.EMPTY) {
+                // We fit the whole stack
+                return ItemStack.EMPTY;
+            }else{
+                amtToFit = toTest.getCount(); // The remaining amount
             }
         }
-        return false;
+
+        // Now that we've done our first pass of checks to see if it fits in without new stacks, let's do the second go
+        // where we just try to fit it in
+
+        for (BlockPos bp : this.interactables) {
+            IInteractable te = (IInteractable) world.getTileEntity(bp);
+            if(te == null) continue;
+            if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
+            TEStorageHollow teStorageHollow = (TEStorageHollow) world.getTileEntity(bp);
+
+            ItemStack toTest = ItemHandlerHelper.copyStackWithSize(stack, amtToFit);
+            toTest = teStorageHollow.doFit(toTest);
+
+            if (toTest == ItemStack.EMPTY) {
+                // We fit the whole stack
+                return ItemStack.EMPTY;
+            }else{
+                amtToFit = toTest.getCount(); // The remaining amount
+            }
+        }
+
+        return ItemHandlerHelper.copyStackWithSize(stack, amtToFit);
     }
 
     // Additive liquid check. Can we remove this liquid, if we iterate through all fluid hollows?
@@ -1047,15 +1092,22 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
             for (CraftTreeBuilder.DirectionalItemStack dir : directionalItemStacks) {
                 if (dir.isAdd()) {
                     // Add an item to this block
-
-                    storeItemInFirstOpenSlot(dir.getStack());
+                    if(canFitItem(dir.getStack()) != ItemStack.EMPTY){
+                        // We can't fit the intermediate stages of crafting
+                        return false;
+                    }
+                    doFitItem(dir.getStack());
                 } else {
                     tryRemoveItemFromInventory(dir.getStack());
                 }
             }
             ItemStack result = is.copy();
             ThingsOfNaturalEnergies.logger.error("The stack has " + result.getCount() + " items in it");
-            storeItemInFirstOpenSlot(result);
+            if(canFitItem(result) != ItemStack.EMPTY){
+                // We can't fit the final stages of crafting
+                return false;
+            }
+            doFitItem(result);
             alreadyHave = allItemsInStorage();
             return true;
         }
@@ -1470,7 +1522,6 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                     continue;
                 }else{
                     storageHollow.setInventorySlotContents(desiredSlot, stack);
-                    ThingsOfNaturalEnergies.logger.error("Setting at pos " + storageHollow.getPos().toString() + " with " + stack.getDisplayName() + "x " + stack.getCount());
                     return;
                 }
             }else{
@@ -1519,7 +1570,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                         // We're good - theoretically, for this item, but does it match the filter?
                         if (!matchesFilter(itemstack, new CompareOptions(filter))) continue;
                         ItemStack one = itemstack.copy().splitStack(1);
-                        storeItemInFirstOpenSlot(one);
+                        doFitItem(one);
                         itemWasPulled = true;
                         ItemStack second = target.decrStackSize(i, 1);
                         if (second.isEmpty()) {
@@ -1543,7 +1594,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
                         // We're good. Let's store it.
                         ItemStack one = itemstack.copy().splitStack(1);
 
-                        storeItemInFirstOpenSlot(one);
+                        doFitItem(one);
                         itemWasPulled = true;
                         ItemStack second = target.decrStackSize(k, 1);
                         if (second.isEmpty()) {
