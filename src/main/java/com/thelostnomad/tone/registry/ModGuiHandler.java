@@ -1,17 +1,8 @@
 package com.thelostnomad.tone.registry;
 
-import com.thelostnomad.tone.block.container.ContainerKeeper;
-import com.thelostnomad.tone.block.container.ContainerLivingCraftingStation;
-import com.thelostnomad.tone.block.container.ContainerPuller;
-import com.thelostnomad.tone.block.container.ContainerPusher;
-import com.thelostnomad.tone.block.gui.GuiKeeper;
-import com.thelostnomad.tone.block.gui.GuiLivingCraftingStation;
-import com.thelostnomad.tone.block.gui.GuiPuller;
-import com.thelostnomad.tone.block.gui.GuiPusher;
-import com.thelostnomad.tone.block.tileentity.TEKeeper;
-import com.thelostnomad.tone.block.tileentity.TELivingCraftingStation;
-import com.thelostnomad.tone.block.tileentity.TEPuller;
-import com.thelostnomad.tone.block.tileentity.TEPusher;
+import com.thelostnomad.tone.block.container.*;
+import com.thelostnomad.tone.block.gui.*;
+import com.thelostnomad.tone.block.tileentity.*;
 import com.thelostnomad.tone.network.TonePacketHandler;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
@@ -54,6 +45,10 @@ public class ModGuiHandler implements IGuiHandler {
             TEKeeper tileEntityLivingCraftingStation = (TEKeeper) tileEntity;
             return new ContainerKeeper(player.inventory, tileEntityLivingCraftingStation);
         }
+        if (tileEntity instanceof TEAcceptor){
+            TEAcceptor teAcceptor = (TEAcceptor) tileEntity;
+            return new ContainerAcceptor(player.inventory, teAcceptor);
+        }
         return null;
     }
 
@@ -81,6 +76,10 @@ public class ModGuiHandler implements IGuiHandler {
         if (tileEntity instanceof TEKeeper){
             TEKeeper tileEntityLivingCraftingStation = (TEKeeper) tileEntity;
             return new GuiKeeper(player.inventory, tileEntityLivingCraftingStation);
+        }
+        if (tileEntity instanceof TEAcceptor){
+            TEAcceptor teAcceptor = (TEAcceptor) tileEntity;
+            return new GuiAcceptor(player.inventory, teAcceptor);
         }
         return null;
     }

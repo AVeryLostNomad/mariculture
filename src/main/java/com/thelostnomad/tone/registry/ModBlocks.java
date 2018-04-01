@@ -55,6 +55,8 @@ public class ModBlocks {
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:keeper")
     public static BlockKeeper blockKeeper;
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:acceptor")
+    public static BlockAcceptor blockAcceptor;
 
     // Berries
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_hasto")

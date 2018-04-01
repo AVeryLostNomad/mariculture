@@ -29,7 +29,7 @@ import java.util.List;
 
 public class BlockAcceptor extends BlockContainer implements ITree {
 
-    protected BlockAcceptor() {
+    public BlockAcceptor() {
         super(Material.WOOD);
         setUnlocalizedName(ThingsOfNaturalEnergies.MODID + ".acceptor");
         setRegistryName("acceptor");

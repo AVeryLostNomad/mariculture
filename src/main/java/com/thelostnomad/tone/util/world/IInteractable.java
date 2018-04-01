@@ -12,7 +12,8 @@ public interface IInteractable {
         PUSHER,
         PULLER,
         INTEGRATION,
-        KEEPER
+        KEEPER,
+        MISC
     }
 
 }

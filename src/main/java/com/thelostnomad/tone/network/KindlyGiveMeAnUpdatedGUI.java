@@ -1,6 +1,7 @@
 package com.thelostnomad.tone.network;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
+import com.thelostnomad.tone.block.tileentity.TEAcceptor;
 import com.thelostnomad.tone.block.tileentity.TEKeeper;
 import com.thelostnomad.tone.util.gui.SyncableContainer;
 import com.thelostnomad.tone.util.gui.SyncableTileEntity;
@@ -47,6 +48,10 @@ public class KindlyGiveMeAnUpdatedGUI implements IMessage {
                     if(tileSyncable instanceof TEKeeper){
                         TEKeeper keeper = (TEKeeper) tileSyncable;
                         ThingsOfNaturalEnergies.logger.error("Server side: " + keeper.isRedstoneRequired());
+                    }
+                    if(tileSyncable instanceof TEAcceptor){
+                        TEAcceptor keeper = (TEAcceptor) tileSyncable;
+                        ThingsOfNaturalEnergies.logger.error("Server side: " + keeper.getVoidExcess());
                     }
                     TonePacketHandler.sendTo(new PlayerGuiSyncMessage(tileSyncable.getSyncable()), player);
                 }

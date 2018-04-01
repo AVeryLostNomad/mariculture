@@ -290,7 +290,6 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
         parentNBTTagCompound.setBoolean("IncludeInventory", includeInInventory);
         parentNBTTagCompound.setBoolean("ExactItem", exactItem);
         parentNBTTagCompound.setBoolean("RedstoneOn", redstoneRequired);
-        ThingsOfNaturalEnergies.logger.error("Setting redstoneOn to " + redstoneRequired);
 
         // return the NBT Tag Compound
         return parentNBTTagCompound;
@@ -424,7 +423,6 @@ public class TEKeeper extends TileEntity implements IInventory, IInteractable, I
         includeInInventory = fromClient.getBoolean("include");
         exactItem = fromClient.getBoolean("exact");
         redstoneRequired = fromClient.getBoolean("redstone");
-        ThingsOfNaturalEnergies.logger.error("Updating info to have redstone: " + redstoneRequired);
     }
 
     @Override

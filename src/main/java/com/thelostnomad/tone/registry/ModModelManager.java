@@ -100,6 +100,9 @@ public class ModModelManager {
                 ModBlocks.blockKeeper.getDefaultState()
         );
         registerBlockItemModel(
+                ModBlocks.blockAcceptor.getDefaultState()
+        );
+        registerBlockItemModel(
                 ModBlocks.fluidHollowBasic.getDefaultState()
         );
         registerBlockItemModel(
