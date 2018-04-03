@@ -97,6 +97,24 @@ public class ModModelManager {
                 ModBlocks.storageHollowBig.getDefaultState()
         );
         registerBlockItemModel(
+                ModBlocks.storageHollowLarge.getDefaultState()
+        );
+        registerBlockItemModel(
+                ModBlocks.storageHollowMassive.getDefaultState()
+        );
+        registerBlockItemModel(
+                ModBlocks.storageHollowGargantuan.getDefaultState()
+        );
+        registerBlockItemModel(
+                ModBlocks.storageHollowQuiteBig.getDefaultState()
+        );
+        registerBlockItemModel(
+                ModBlocks.storageHollowEvenBigger.getDefaultState()
+        );
+//        registerBlockItemModel(
+//                ModBlocks.storageHollowSingularity.getDefaultState()
+//        );
+        registerBlockItemModel(
                 ModBlocks.blockKeeper.getDefaultState()
         );
         registerBlockItemModel(

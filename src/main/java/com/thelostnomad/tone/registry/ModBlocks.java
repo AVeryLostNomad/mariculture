@@ -9,8 +9,7 @@ import com.thelostnomad.tone.block.berries.HastoBerry;
 import com.thelostnomad.tone.block.berries.RezzoBerry;
 import com.thelostnomad.tone.block.fluid.BlockTransmutationGas;
 import com.thelostnomad.tone.block.fluid_hollows.BasicFluidHollow;
-import com.thelostnomad.tone.block.storage_hollows.BasicStorageHollow;
-import com.thelostnomad.tone.block.storage_hollows.BigStorageHollow;
+import com.thelostnomad.tone.block.storage_hollows.*;
 import javafx.scene.effect.Glow;
 import net.minecraft.world.biome.Biome;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -34,6 +33,24 @@ public class ModBlocks {
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_big")
     public static BigStorageHollow storageHollowBig;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_large")
+    public static LargeStorageHollow storageHollowLarge;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_massive")
+    public static MassiveStorageHollow storageHollowMassive;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_gargantuan")
+    public static GargantuanStorageHollow storageHollowGargantuan;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_quitebig")
+    public static QuiteBigStorageHollow storageHollowQuiteBig;
+
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_evenbigger")
+    public static EvenBiggerStorageHollow storageHollowEvenBigger;
+
+//    @GameRegistry.ObjectHolder("thingsofnaturalenergies:storagehollow_singularity")
+//    public static SingularityStorageHollow storageHollowSingularity;
 
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:fluidhollow_basic")
     public static BasicFluidHollow fluidHollowBasic;
