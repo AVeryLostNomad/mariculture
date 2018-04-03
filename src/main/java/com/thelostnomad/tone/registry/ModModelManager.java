@@ -103,6 +103,9 @@ public class ModModelManager {
                 ModBlocks.blockAcceptor.getDefaultState()
         );
         registerBlockItemModel(
+                ModBlocks.focusPusher.getDefaultState()
+        );
+        registerBlockItemModel(
                 ModBlocks.fluidHollowBasic.getDefaultState()
         );
         registerBlockItemModel(

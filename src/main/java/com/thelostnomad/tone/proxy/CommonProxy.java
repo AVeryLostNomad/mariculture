@@ -77,6 +77,7 @@ public class CommonProxy {
         GameRegistry.registerTileEntity(TELivingCraftingStation.class, TELivingCraftingStation.NAME);
         GameRegistry.registerTileEntity(TEKeeper.class, TEKeeper.NAME);
         GameRegistry.registerTileEntity(TEAcceptor.class, TEAcceptor.NAME);
+        GameRegistry.registerTileEntity(TEFocusPusher.class, TEFocusPusher.NAME);
 
         for(IToneIntegration integration : toneIntegrations){
             if(Loader.isModLoaded(integration.getIntegrationModid())){
@@ -118,6 +119,7 @@ public class CommonProxy {
         event.getRegistry().register(new BlockPuller());
         event.getRegistry().register(new BlockPusher());
         event.getRegistry().register(new BlockKeeper());
+        event.getRegistry().register(new BlockFocusPusher());
         event.getRegistry().register(new BlockAcceptor());
 //        event.getRegistry().register(new BlockTransmutationGas());
         event.getRegistry().register(new BlockLivingCraftingStation());
@@ -155,6 +157,7 @@ public class CommonProxy {
         event.getRegistry().register(new ItemBlock(ModBlocks.livingCraftingStation).setRegistryName(ModBlocks.livingCraftingStation.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.blockKeeper).setRegistryName(ModBlocks.blockKeeper.getRegistryName()));
         event.getRegistry().register(new ItemBlock(ModBlocks.blockAcceptor).setRegistryName(ModBlocks.blockAcceptor.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(ModBlocks.focusPusher).setRegistryName(ModBlocks.focusPusher.getRegistryName()));
 
         event.getRegistry().register(ModItems.tokenPullAll);
         event.getRegistry().register(ModItems.hastoBerryItem);

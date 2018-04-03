@@ -49,6 +49,10 @@ public class ModGuiHandler implements IGuiHandler {
             TEAcceptor teAcceptor = (TEAcceptor) tileEntity;
             return new ContainerAcceptor(player.inventory, teAcceptor);
         }
+        if (tileEntity instanceof TEFocusPusher){
+            TEFocusPusher teFoc = (TEFocusPusher) tileEntity;
+            return new ContainerFocusPusher(player.inventory, teFoc);
+        }
         return null;
     }
 
@@ -80,6 +84,10 @@ public class ModGuiHandler implements IGuiHandler {
         if (tileEntity instanceof TEAcceptor){
             TEAcceptor teAcceptor = (TEAcceptor) tileEntity;
             return new GuiAcceptor(player.inventory, teAcceptor);
+        }
+        if (tileEntity instanceof TEFocusPusher){
+            TEFocusPusher teFocusPusher = (TEFocusPusher) tileEntity;
+            return new GuiFocusPusher(player.inventory, teFocusPusher);
         }
         return null;
     }

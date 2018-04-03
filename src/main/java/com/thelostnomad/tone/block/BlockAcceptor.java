@@ -2,6 +2,8 @@ package com.thelostnomad.tone.block;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TEAcceptor;
+import com.thelostnomad.tone.block.tileentity.TEFocusPusher;
+import com.thelostnomad.tone.block.tileentity.TEPuller;
 import com.thelostnomad.tone.block.tileentity.TESentientTreeCore;
 import com.thelostnomad.tone.registry.ModGuiHandler;
 import com.thelostnomad.tone.util.ChatUtil;
@@ -54,6 +56,24 @@ public class BlockAcceptor extends BlockContainer implements ITree {
             playerIn.openGui(ThingsOfNaturalEnergies.instance, ModGuiHandler.getGuiID(), worldIn, pos.getX(), pos.getY(), pos.getZ());
             return true;
         }
+    }
+
+    @Override
+    public void breakBlock(World worldIn, BlockPos pos, IBlockState state) {
+        TileEntity thisTE = worldIn.getTileEntity(pos);
+        if (thisTE != null && thisTE instanceof TEAcceptor) {
+            TEAcceptor thisHollow = (TEAcceptor) thisTE;
+            if (thisHollow.getCoreLocation() != null) {
+                TileEntity te = worldIn.getTileEntity(thisHollow.getCoreLocation());
+                if (te != null && te instanceof TESentientTreeCore) {
+                    TESentientTreeCore core = (TESentientTreeCore) te;
+                    core.removeInteractable(pos);
+                }
+            }
+        }
+
+        // Super MUST be called last because it removes the tile entity
+        super.breakBlock(worldIn, pos, state);
     }
 
     public void onBlockPlacedBy(World worldIn, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack) {

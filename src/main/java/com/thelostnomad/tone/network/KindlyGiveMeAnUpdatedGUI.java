@@ -2,6 +2,7 @@ package com.thelostnomad.tone.network;
 
 import com.thelostnomad.tone.ThingsOfNaturalEnergies;
 import com.thelostnomad.tone.block.tileentity.TEAcceptor;
+import com.thelostnomad.tone.block.tileentity.TEFocusPusher;
 import com.thelostnomad.tone.block.tileentity.TEKeeper;
 import com.thelostnomad.tone.util.gui.SyncableContainer;
 import com.thelostnomad.tone.util.gui.SyncableTileEntity;
@@ -52,6 +53,10 @@ public class KindlyGiveMeAnUpdatedGUI implements IMessage {
                     if(tileSyncable instanceof TEAcceptor){
                         TEAcceptor keeper = (TEAcceptor) tileSyncable;
                         ThingsOfNaturalEnergies.logger.error("Server side: " + keeper.getVoidExcess());
+                    }
+                    if(tileSyncable instanceof TEFocusPusher){
+                        TEFocusPusher keeper = (TEFocusPusher) tileSyncable;
+                        ThingsOfNaturalEnergies.logger.error("Server side: " + keeper.getRate());
                     }
                     TonePacketHandler.sendTo(new PlayerGuiSyncMessage(tileSyncable.getSyncable()), player);
                 }

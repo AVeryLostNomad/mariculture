@@ -57,6 +57,8 @@ public class ModBlocks {
     public static BlockKeeper blockKeeper;
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:acceptor")
     public static BlockAcceptor blockAcceptor;
+    @GameRegistry.ObjectHolder("thingsofnaturalenergies:focus_pusher")
+    public static BlockFocusPusher focusPusher;
 
     // Berries
     @GameRegistry.ObjectHolder("thingsofnaturalenergies:berry_hasto")

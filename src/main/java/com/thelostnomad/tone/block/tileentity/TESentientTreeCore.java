@@ -990,6 +990,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     private boolean itemContainedInStorage(ItemStack stackToFind) {
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
@@ -1006,6 +1007,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         List<ItemStack> toReturn = new ArrayList<ItemStack>();
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() != IInteractable.InteractableType.STORAGE) continue;
             TEStorageHollow storageHollow = (TEStorageHollow) world.getTileEntity(storage);
             for (int i = 0; i < storageHollow.getSizeInventory(); ++i) {
@@ -1380,6 +1382,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
         int totalCount = 0;
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if (te.getType() != IInteractable.InteractableType.STORAGE){
                 if(te.getType() == IInteractable.InteractableType.KEEPER){
                     // This keeper might be worth including.
@@ -1400,6 +1403,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public ItemStack getOverallStackInSlot(int desiredSlot){
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() == IInteractable.InteractableType.STORAGE){
                 TEStorageHollow storageHollow = (TEStorageHollow) te;
                 if(desiredSlot >= storageHollow.getCapacity()){
@@ -1429,6 +1433,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public ItemStack overallDecrStackSize(int desiredSlot, int count){
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() == IInteractable.InteractableType.STORAGE){
                 TEStorageHollow storageHollow = (TEStorageHollow) te;
                 if(desiredSlot >= storageHollow.getCapacity()){
@@ -1457,6 +1462,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public ItemStack overallRemoveStack(int desiredSlot){
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() == IInteractable.InteractableType.STORAGE){
                 TEStorageHollow storageHollow = (TEStorageHollow) te;
                 if(desiredSlot >= storageHollow.getCapacity()){
@@ -1485,6 +1491,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public int overallStackMax(int desiredSlot, ItemStack stack){
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() == IInteractable.InteractableType.STORAGE){
                 TEStorageHollow storageHollow = (TEStorageHollow) te;
                 if(desiredSlot >= storageHollow.getCapacity()){
@@ -1515,6 +1522,7 @@ public class TESentientTreeCore extends TileEntity implements ITickable {
     public void overallSetContents(int desiredSlot, ItemStack stack){
         for (BlockPos storage : interactables) {
             IInteractable te = (IInteractable) world.getTileEntity(storage);
+            if(te == null) continue;
             if(te.getType() == IInteractable.InteractableType.STORAGE){
                 TEStorageHollow storageHollow = (TEStorageHollow) te;
                 if(desiredSlot >= storageHollow.getCapacity()){
