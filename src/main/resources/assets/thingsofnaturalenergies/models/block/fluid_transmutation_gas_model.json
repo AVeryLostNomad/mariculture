@@ -1,9 +1,0 @@
-{
-  "parent": "block/orientable",
-  "textures": {
-    "up": "thingsofnaturalenergies:blocks/fluid_transmutation_gas",
-    "down": "thingsofnaturalenergies:blocks/fluid_transmutation_gas",
-    "front": "thingsofnaturalenergies:blocks/fluid_transmutation_gas",
-    "side": "thingsofnaturalenergies:blocks/fluid_transmutation_gas"
-  }
-}

@@ -1,0 +1,27 @@
+{
+  "forge_marker": 1,
+  "defaults": {
+    "transform": "forge:default-block",
+    "model": "cube_all"
+  },
+  "variants": {
+    "limestone": {
+      "raw": { "textures": { "all": "mariculture:blocks/limestone_raw" } },
+      "smooth": { "textures": { "all": "mariculture:blocks/limestone_smooth" } },
+      "brick": { "textures": { "all": "mariculture:blocks/limestone_brick" } },
+      "small_brick": { "textures": { "all": "mariculture:blocks/limestone_small_brick" } },
+      "thin_brick": { "textures": { "all": "mariculture:blocks/limestone_thin_brick" } },
+      "bordered": { "textures": { "all": "mariculture:blocks/limestone_bordered" } },
+      "chiseled": { "model": "mariculture:limestone_chiseled" },
+      "pillar_1": { "model": "mariculture:limestone_pillar" },
+      "pillar_2": { "model": "mariculture:limestone_pillar", "x": 90 },
+      "pillar_3": { "model": "mariculture:limestone_pillar", "x": 90, "y": 90 },
+      "pedestal_1": { "model": "mariculture:limestone_pedestal" },
+      "pedestal_2": { "model": "mariculture:limestone_pedestal", "x": 180 },
+      "pedestal_3": { "model": "mariculture:limestone_pedestal", "x": 90 },
+      "pedestal_4": { "model": "mariculture:limestone_pedestal", "x": 270 },
+      "pedestal_5": { "model": "mariculture:limestone_pedestal", "x": 90, "y": 270 },
+      "pedestal_6": { "model": "mariculture:limestone_pedestal", "x": 90, "y": 90 }
+    }
+  }
+}
